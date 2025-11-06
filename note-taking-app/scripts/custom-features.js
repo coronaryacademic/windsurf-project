@@ -1,5 +1,8 @@
 // Custom Features for Note-Taking App
 
+// Global UI elements
+let topbar, sidebar, footer;
+
 // Show loading spinner on startup
 window.addEventListener("load", () => {
   const loader = document.getElementById("appLoader");
