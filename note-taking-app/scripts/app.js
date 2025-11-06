@@ -3701,6 +3701,7 @@ const Storage = {
   const aboutAppBtn = document.getElementById("aboutAppBtn");
   if (aboutAppBtn) {
     aboutAppBtn.addEventListener("click", () => {
+      el.settingsMenu.classList.remove("open");
       showAboutModal();
     });
   }
@@ -3725,8 +3726,8 @@ const Storage = {
             </div>
             <h2>My Notes</h2>
             <div class="about-info">
-              <p><strong>Version:</strong> 7.0</p>
-              <p><strong>Build:</strong> 7</p>
+              <p><strong>Version:</strong> 8.0</p>
+              <p><strong>Build:</strong> 8</p>
               <p><strong>Last Updated:</strong> November 6, 2025</p>
               <p><strong>Created by:</strong> Momen</p>
             </div>
