@@ -1,0 +1,284 @@
+/* Table Styles */
+
+.note-table {
+  border-collapse: separate;
+  border-spacing: 0;
+  margin: 16px 0;
+  background: var(--panel);
+  border: 2px solid var(--border);
+  border-radius: 8px;
+  overflow: hidden;
+  min-width: 300px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.note-table td,
+.note-table th {
+  border: 1px solid var(--border);
+  border-top: none;
+  border-left: none;
+  padding: 10px 14px;
+  min-width: 100px;
+  position: relative;
+  background: var(--panel);
+}
+
+.note-table tr:first-child td,
+.note-table tr:first-child th {
+  border-top: none;
+}
+
+.note-table td:first-child,
+.note-table th:first-child {
+  border-left: none;
+}
+
+.note-table td:focus,
+.note-table th:focus {
+  outline: 2px solid var(--accent);
+  outline-offset: -2px;
+  background: var(--panel-hover);
+}
+
+.note-table tr:hover {
+  background: var(--panel-hover);
+}
+
+/* Table wrapper for controls */
+.table-wrapper {
+  position: relative;
+  display: inline-block;
+  margin: 16px 0;
+}
+
+/* Add row/column buttons */
+.table-add-row,
+.table-add-col {
+  position: absolute;
+  background: var(--accent);
+  color: white;
+  border: none;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  cursor: pointer;
+  font-size: 16px;
+  font-weight: bold;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0.7;
+  transition: all 0.2s;
+  z-index: 10;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+.table-add-row:hover,
+.table-add-col:hover {
+  opacity: 1;
+  transform: scale(1.1);
+}
+
+.table-add-row {
+  bottom: -12px;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+.table-add-row:hover {
+  bottom: -14px;
+}
+
+.table-add-col {
+  right: -12px;
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+.table-add-col:hover {
+  right: -14px;
+}
+
+/* Table context menu styling */
+.table-context-menu {
+  min-width: 200px;
+  max-width: 250px;
+  max-height: 400px;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+.table-context-menu button {
+  text-align: left;
+  padding: 8px 16px;
+  white-space: nowrap;
+  width: 100%;
+}
+
+.table-context-menu::-webkit-scrollbar {
+  width: 8px;
+}
+
+.table-context-menu::-webkit-scrollbar-track {
+  background: var(--panel-2);
+  border-radius: 4px;
+}
+
+.table-context-menu::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 4px;
+}
+
+.table-context-menu::-webkit-scrollbar-thumb:hover {
+  background: var(--muted);
+}
+
+/* Nested tables */
+.note-table .note-table {
+  margin: 4px 0;
+  font-size: 0.9em;
+}
+
+/* Styled cells */
+.note-table td[style*="background"],
+.note-table th[style*="background"] {
+  font-weight: 500;
+}
+
+/* Table selection */
+.note-table td.selected,
+.note-table th.selected {
+  background: var(--accent) !important;
+  color: white;
+}
+
+/* Responsive tables */
+@media (max-width: 768px) {
+  .note-table {
+    font-size: 14px;
+  }
+  
+  .note-table td,
+  .note-table th {
+    padding: 6px 8px;
+    min-width: 60px;
+  }
+}
+
+/* Table in readonly mode (when contenteditable is false) */
+.note-table[contenteditable="false"] {
+  user-select: none;
+}
+
+.note-table td[contenteditable="true"],
+.note-table th[contenteditable="true"] {
+  user-select: text;
+  cursor: text;
+}
+
+/* Table controls hidden by default */
+.table-controls {
+  display: none;
+}
+
+.table-wrapper:hover .table-controls {
+  display: flex;
+}
+
+/* Table Editor Window */
+.table-editor-window .window-body {
+  display: flex;
+  flex-direction: column;
+  padding: 0;
+}
+
+.table-editor-toolbar {
+  display: flex;
+  gap: 8px;
+  padding: 12px;
+  background: var(--panel-2);
+  border-bottom: 1px solid var(--border);
+}
+
+.table-btn {
+  padding: 8px 16px;
+  background: var(--accent);
+  color: white;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 500;
+  transition: all 0.2s;
+}
+
+.table-btn:hover {
+  background: var(--accent-hover);
+  transform: translateY(-1px);
+}
+
+.table-editor-content {
+  flex: 1;
+  overflow: auto;
+  padding: 20px;
+  background: var(--bg);
+}
+
+.editor-table {
+  margin: 0 auto;
+}
+
+/* Locked note styling */
+.content.editable[contenteditable="false"] {
+  cursor: default;
+  user-select: text;
+}
+
+/* Lock icon beside title */
+.lock-icon {
+  display: inline-flex;
+  align-items: center;
+  margin-right: 8px;
+  color: var(--muted);
+}
+
+.lock-icon svg {
+  width: 16px;
+  height: 16px;
+}
+
+/* Table placeholder - match Image style */
+.table-placeholder {
+  cursor: pointer;
+  display: inline;
+}
+
+.table-link {
+  color: #3b82f6;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.table-link:hover {
+  text-decoration: underline;
+}
+
+/* Nested tables */
+.nested-table {
+  font-size: 0.95em;
+}
+
+.nested-table td,
+.nested-table th {
+  padding: 6px !important;
+  min-width: 60px !important;
+}
+
+/* Make tables draggable */
+.note-table[draggable="true"] {
+  cursor: move;
+}
+
+.note-table[draggable="true"]:hover {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}

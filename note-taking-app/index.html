@@ -1,0 +1,928 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link
+      rel="icon"
+      type="image/svg+xml"
+      href='data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><rect rx="12" ry="12" width="64" height="64" fill="%23fbbf24"/><path d="M18 20h28v4H18zm0 10h28v4H18zm0 10h18v4H18z" fill="%231f2937"/></svg>'
+    />
+    <link rel="stylesheet" href="./styles/style.css" />
+    <title>My Notes</title>
+  </head>
+  <body>
+    <!-- Loading Spinner -->
+    <div id="appLoader" class="app-loader">
+      <div class="loader-spinner"></div>
+      <div class="loader-text">Loading...</div>
+    </div>
+
+    <div id="app">
+      <aside id="sidebar" class="sidebar">
+        <div class="sidebar-header">
+          <span class="muted">All Notes</span>
+          <button id="newNoteBtn" class="primary">+ New</button>
+        </div>
+        <div id="noteList" class="note-list"></div>
+        <div class="sidebar-search">
+          <input
+            type="text"
+            id="searchInput"
+            placeholder="Search notes, titles, tags..."
+            autocomplete="off"
+          />
+          <button id="clearSearch" class="clear-search" title="Clear search">
+            ×
+          </button>
+        </div>
+        <div
+          id="sidebarResizer"
+          class="sidebar-resizer"
+          title="Drag to resize"
+        ></div>
+      </aside>
+
+      <main class="main">
+        <div class="topbar">
+          <div class="topbar-left">
+            <button
+              id="toggleSidebarBtn"
+              class="icon-btn"
+              title="Toggle sidebar"
+            >
+              <svg
+                width="18"
+                height="18"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+              >
+                <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                <line x1="9" y1="3" x2="9" y2="21"></line>
+              </svg>
+            </button>
+            <button id="homeBtn" class="icon-btn" title="Go to home">
+              <svg
+                width="18"
+                height="18"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              >
+                <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+                <polyline points="9 22 9 12 15 12 15 22"></polyline>
+              </svg>
+            </button>
+            <div class="brand">My Notes</div>
+            <div id="dock" class="dock" title="Minimized windows"></div>
+          </div>
+          <div class="top-actions">
+            <div class="menu" id="toolsMenu">
+              <button id="toolsBtn" class="icon-btn" title="Tools">
+                <svg
+                  width="20"
+                  height="20"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                >
+                  <path
+                    d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"
+                  />
+                </svg>
+              </button>
+              <div class="menu-list" id="toolsList">
+                <!-- Workspace section temporarily disabled -->
+                <!--
+                <div class="label">Workspace</div>
+                <button id="restoreWorkspaceBtn" class="menu-item" style="display: none;">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <polyline points="1 4 1 10 7 10"></polyline>
+                    <path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"></path>
+                  </svg>
+                  Restore Workspace Tabs
+                </button>
+                <button id="deleteAllWorkspacesBtn" class="menu-item danger" style="display: none;">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <polyline points="3 6 5 6 21 6"></polyline>
+                    <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                    <line x1="10" y1="11" x2="10" y2="17"></line>
+                    <line x1="14" y1="11" x2="14" y2="17"></line>
+                  </svg>
+                  Delete All Workspaces
+                </button>
+                <button id="saveWorkspaceBtn" class="menu-item" style="display: none;">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path>
+                    <polyline points="17 21 17 13 7 13 7 21"></polyline>
+                    <polyline points="7 3 7 8 15 8"></polyline>
+                  </svg>
+                  Save Workspace
+                </button>
+                <button id="loadWorkspaceBtn" class="menu-item" style="display: none;">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                    <polyline points="7 10 12 15 17 10"></polyline>
+                    <line x1="12" y1="15" x2="12" y2="3"></line>
+                  </svg>
+                  Load Workspace
+                </button>
+                -->
+                <hr />
+                <button id="duplicateBtn">
+                  <svg
+                    width="16"
+                    height="16"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                  >
+                    <rect
+                      x="9"
+                      y="9"
+                      width="13"
+                      height="13"
+                      rx="2"
+                      ry="2"
+                    ></rect>
+                    <path
+                      d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"
+                    ></path>
+                  </svg>
+                  Duplicate Active
+                </button>
+                <button id="deleteBtn">
+                  <svg
+                    width="16"
+                    height="16"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                  >
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <line x1="15" y1="9" x2="9" y2="15"></line>
+                    <line x1="9" y1="9" x2="15" y2="15"></line>
+                  </svg>
+                  Delete Active
+                </button>
+                <button id="trashBtn">
+                  <svg
+                    width="16"
+                    height="16"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  >
+                    <path d="M3 6h18" />
+                    <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6" />
+                    <path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+                    <line x1="10" y1="11" x2="10" y2="17" />
+                    <line x1="14" y1="11" x2="14" y2="17" />
+                  </svg>
+                  Trash
+                </button>
+                <hr />
+                <button id="exportBtn">
+                  <svg
+                    width="16"
+                    height="16"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                  >
+                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                    <polyline points="17 8 12 3 7 8"></polyline>
+                    <line x1="12" y1="3" x2="12" y2="15"></line>
+                  </svg>
+                  Export Notes
+                </button>
+                <button id="importBtn">
+                  <svg
+                    width="16"
+                    height="16"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                  >
+                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                    <polyline points="7 10 12 15 17 10"></polyline>
+                    <line x1="12" y1="15" x2="12" y2="3"></line>
+                  </svg>
+                  Import Notes
+                </button>
+                <button id="exportHtmlBtn">
+                  <svg
+                    width="16"
+                    height="16"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                  >
+                    <polyline points="16 18 22 12 16 6"></polyline>
+                    <polyline points="8 6 2 12 8 18"></polyline>
+                  </svg>
+                  Export HTML
+                </button>
+                <button id="exportPdfBtn">
+                  <svg
+                    width="16"
+                    height="16"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                  >
+                    <path
+                      d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"
+                    ></path>
+                    <polyline points="14 2 14 8 20 8"></polyline>
+                    <line x1="16" y1="13" x2="8" y2="13"></line>
+                    <line x1="16" y1="17" x2="8" y2="17"></line>
+                    <polyline points="10 9 9 9 8 9"></polyline>
+                  </svg>
+                  Export PDF
+                </button>
+                <hr />
+                <div class="label">Highlight</div>
+                <div class="palette" id="hlPalette">
+                  <button
+                    data-color="#ffff00"
+                    style="background: #ffff00"
+                    title="Bright Yellow"
+                  ></button>
+                  <button
+                    data-color="#ff9500"
+                    style="background: #ff9500"
+                    title="Bright Orange"
+                  ></button>
+                  <button
+                    data-color="#00ff00"
+                    style="background: #00ff00"
+                    title="Bright Green"
+                  ></button>
+                  <button
+                    data-color="#ff00ff"
+                    style="background: #ff00ff"
+                    title="Bright Pink"
+                  ></button>
+                  <button
+                    data-color="#00ffff"
+                    style="background: #00ffff"
+                    title="Bright Cyan"
+                  ></button>
+                </div>
+                <button id="autoHlToggle">Auto Highlight: OFF</button>
+                <button id="newFolderBtn">
+                  <svg
+                    width="16"
+                    height="16"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                  >
+                    <path
+                      d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"
+                    ></path>
+                    <line x1="12" y1="11" x2="12" y2="17"></line>
+                    <line x1="9" y1="14" x2="15" y2="14"></line>
+                  </svg>
+                  New Folder
+                </button>
+              </div>
+            </div>
+            <div class="menu" id="settingsMenu">
+              <button id="settingsBtn" class="icon-btn" title="Settings">
+                <svg
+                  width="20"
+                  height="20"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                >
+                  <path
+                    d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"
+                  />
+                  <circle cx="12" cy="12" r="3" />
+                </svg>
+              </button>
+              <div class="menu-list" id="settingsList">
+                <div class="label">Theme</div>
+                <div class="theme-carousel">
+                  <button class="theme-arrow theme-prev">
+                    <svg
+                      width="16"
+                      height="16"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="2"
+                    >
+                      <polyline points="15 18 9 12 15 6"></polyline>
+                    </svg>
+                  </button>
+                  <span class="theme-name">Dark</span>
+                  <button class="theme-arrow theme-next">
+                    <svg
+                      width="16"
+                      height="16"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="2"
+                    >
+                      <polyline points="9 18 15 12 9 6"></polyline>
+                    </svg>
+                  </button>
+                </div>
+                <hr />
+                <button id="autoBackupBtn">
+                  <svg
+                    width="16"
+                    height="16"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                  >
+                    <path
+                      d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"
+                    ></path>
+                    <polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline>
+                    <line x1="12" y1="22.08" x2="12" y2="12"></line>
+                  </svg>
+                  Auto Backup
+                </button>
+                <button id="clearAllBtn" class="danger-btn">
+                  <svg
+                    width="16"
+                    height="16"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                  >
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <line x1="15" y1="9" x2="9" y2="15"></line>
+                    <line x1="9" y1="9" x2="15" y2="15"></line>
+                  </svg>
+                  Clear All (Danger)
+                </button>
+              </div>
+            </div>
+            <button id="safeRefreshBtn" class="icon-btn" title="Safe Refresh">
+              <svg
+                width="20"
+                height="20"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              >
+                <polyline points="23 4 23 10 17 10"></polyline>
+                <polyline points="1 20 1 14 7 14"></polyline>
+                <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
+              </svg>
+            </button>
+            <button id="closeAppBtn" class="icon-btn" title="Close App">
+              <svg
+                width="20"
+                height="20"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              >
+                <circle cx="12" cy="12" r="10"></circle>
+                <line x1="15" y1="9" x2="9" y2="15"></line>
+                <line x1="9" y1="9" x2="15" y2="15"></line>
+              </svg>
+            </button>
+          </div>
+        </div>
+
+        <section class="workspace">
+          <div class="pane" data-pane="left">
+            <div class="tabs-container">
+              <div class="tabs" id="tabs-left"></div>
+            </div>
+            <div class="pane-content" id="pane-left"></div>
+          </div>
+          <div id="resizer" class="resizer" title="Drag to split"></div>
+          <div class="pane" data-pane="right">
+            <div class="tabs-container">
+              <div class="tabs" id="tabs-right"></div>
+            </div>
+            <div class="pane-content" id="pane-right"></div>
+          </div>
+          <div id="float-layer" class="float-layer"></div>
+          <div id="empty-state" class="empty-state hidden">
+            <div class="empty-frame">
+              <div
+                class="empty-scroll-container"
+                style="
+                  padding-top: 100px;
+                  overflow-y: scroll;
+                  scrollbar-width: none;
+                  -ms-overflow-style: none;
+                "
+              >
+                <div class="ai-welcome">
+                  <div class="ai-greeting">Welcome Dr. Momen</div>
+                  <div class="welcome-shortcuts">
+                    <h4>Keyboard Shortcuts</h4>
+                    <div class="welcome-shortcuts-grid">
+                      <div><kbd>Ctrl+N</kbd> New note</div>
+                      <div><kbd>Ctrl+S</kbd> Save note</div>
+                      <div><kbd>Ctrl+F</kbd> Search notes</div>
+                      <div><kbd>Ctrl+B</kbd> Bold</div>
+                      <div><kbd>Ctrl+U</kbd> Underline</div>
+                      <div><kbd>Ctrl+H</kbd> Auto Highlight</div>
+                      <div><kbd>Ctrl+O</kbd> Close tab</div>
+                      <div><kbd>Ctrl+P</kbd> Close all</div>
+                      <div><kbd>Ctrl+.</kbd> Toggle sidebar</div>
+                      <div><kbd>F12</kbd> Fullscreen mode</div>
+                      <div><kbd>Ctrl+Scroll</kbd> Zoom text</div>
+                      <div><kbd>Ctrl+Shift+D</kbd> Debug borders</div>
+                      <div><kbd>Delete</kbd> Delete selected</div>
+                      <div><kbd>Ctrl+Click</kbd> Multi-select</div>
+                      <div><kbd>- Space</kbd> Create bullet</div>
+                      <div><kbd>1. Space</kbd> Create number list</div>
+                    </div>
+                  </div>
+                  <div class="marquee-container">
+                    <div class="marquee-label">Task Overview:</div>
+                    <div class="marquee-wrapper">
+                      <div id="marquee-content" class="marquee-content"></div>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="todo-section">
+                  <div class="todo-header">
+                    <h3>Today's Tasks</h3>
+                    <button
+                      id="addTaskBtn"
+                      class="btn-add-task"
+                      title="Add new task"
+                    >
+                      + Add Task
+                    </button>
+                  </div>
+                  <div class="todo-progress-container">
+                    <div class="progress-info">
+                      <span id="progressText" class="progress-text"
+                        >0% Complete</span
+                      >
+                      <span id="progressStats" class="progress-stats"
+                        >0 of 0 tasks</span
+                      >
+                    </div>
+                    <div class="progress-bar-wrapper">
+                      <div
+                        id="progressBar"
+                        class="progress-bar"
+                        style="width: 0%"
+                      ></div>
+                    </div>
+                  </div>
+                  <div id="todoList" class="todo-list"></div>
+                  <div id="todoInput" class="todo-input hidden">
+                    <input
+                      type="text"
+                      id="taskInput"
+                      placeholder="Enter task description..."
+                    />
+                    <div class="todo-input-actions">
+                      <button id="saveTodoBtn" class="btn primary">Save</button>
+                      <button id="cancelTodoBtn" class="btn">Cancel</button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- Workspace Footer Bar - DISABLED -->
+        <!--
+        <div class="workspace-footer" id="workspaceFooter">
+          <button id="toggleWorkspaceBar" class="workspace-toggle-btn" title="Toggle workspace bar">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polyline points="9 18 15 12 9 6"></polyline>
+            </svg>
+          </button>
+          <div id="workspaceTabs" class="workspace-tabs-list"></div>
+          <button id="addWorkspaceBtn" class="workspace-tab-add" style="display: none;">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <line x1="12" y1="5" x2="12" y2="19"></line>
+              <line x1="5" y1="12" x2="19" y2="12"></line>
+            </svg>
+          </button>
+        </div>
+        -->
+      </main>
+    </div>
+
+    <input
+      type="file"
+      id="importInput"
+      accept="application/json"
+      class="hidden"
+    />
+
+    <template id="context-menu-template">
+      <div class="ctx-menu">
+        <div class="ctx-section" data-scope="tab">
+          <button data-cmd="pin-tab">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M12 17v5"></path>
+              <path d="M9 10.76a2 2 0 0 1-1.11 1.79l-1.78.9A2 2 0 0 0 5 15.24V16a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-.76a2 2 0 0 0-1.11-1.79l-1.78-.9A2 2 0 0 1 15 10.76V7a1 1 0 0 1 1-1 2 2 0 0 0 0-4H8a2 2 0 0 0 0 4 1 1 0 0 1 1 1z"></path>
+            </svg>
+            Pin Tab
+          </button>
+          <button data-cmd="close-tab">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <line x1="18" y1="6" x2="6" y2="18"></line>
+              <line x1="6" y1="6" x2="18" y2="18"></line>
+            </svg>
+            Close Tab
+          </button>
+          <button data-cmd="close-other-tabs">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="10"></circle>
+              <line x1="15" y1="9" x2="9" y2="15"></line>
+              <line x1="9" y1="9" x2="15" y2="15"></line>
+            </svg>
+            Close Other Tabs
+          </button>
+          <button data-cmd="close-all-tabs">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <rect x="3" y="3" width="7" height="7"></rect>
+              <rect x="14" y="3" width="7" height="7"></rect>
+              <rect x="14" y="14" width="7" height="7"></rect>
+              <rect x="3" y="14" width="7" height="7"></rect>
+              <line x1="1" y1="1" x2="23" y2="23"></line>
+            </svg>
+            Close All Tabs
+          </button>
+        </div>
+        <div class="ctx-section" data-scope="sidebar">
+          <button data-cmd="new-note">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+              <polyline points="14 2 14 8 20 8"></polyline>
+              <line x1="12" y1="18" x2="12" y2="12"></line>
+              <line x1="9" y1="15" x2="15" y2="15"></line>
+            </svg>
+            New Note
+          </button>
+        </div>
+        <div class="ctx-section" data-scope="note">
+          <button data-cmd="open-window">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+              <line x1="9" y1="3" x2="9" y2="21"></line>
+            </svg>
+            Open Window
+          </button>
+          <hr
+            style="
+              margin: 4px 0;
+              border: none;
+              border-top: 1px solid var(--border);
+            "
+          />
+          <button data-cmd="rename-note">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+              <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+            </svg>
+            Rename Note…
+          </button>
+          <button data-cmd="delete-note">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polyline points="3 6 5 6 21 6"></polyline>
+              <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+            </svg>
+            Delete Note
+          </button>
+        </div>
+        <div class="ctx-section" data-scope="folder">
+          <button data-cmd="new-subfolder">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
+              <line x1="12" y1="11" x2="12" y2="17"></line>
+              <line x1="9" y1="14" x2="15" y2="14"></line>
+            </svg>
+            New Subfolder
+          </button>
+          <hr
+            style="
+              margin: 4px 0;
+              border: none;
+              border-top: 1px solid var(--border);
+            "
+          />
+          <button data-cmd="rename-folder">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+              <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+            </svg>
+            Rename Folder
+          </button>
+          <button data-cmd="delete-folder">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polyline points="3 6 5 6 21 6"></polyline>
+              <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+            </svg>
+            Delete Folder
+          </button>
+        </div>
+      </div>
+    </template>
+
+    <template id="modal-template">
+      <div class="modal-overlay">
+        <div class="modal">
+          <div class="modal-header">
+            <span class="modal-title"></span>
+            <button class="modal-x" aria-label="Close">×</button>
+          </div>
+          <div class="modal-body"></div>
+          <div class="modal-actions"></div>
+        </div>
+      </div>
+    </template>
+
+    <template id="search-results-template">
+      <div class="search-results-modal">
+        <div class="search-results-header">
+          <h3>Search Results</h3>
+          <button class="close-search-results">×</button>
+        </div>
+        <div class="search-results-query"></div>
+        <div class="search-results-content"></div>
+      </div>
+    </template>
+
+    <template id="note-editor-template">
+      <div class="editor">
+        <div class="editor-header">
+          <div class="title-with-tags">
+            <input class="title" placeholder="Title" />
+            <div class="header-tags"></div>
+          </div>
+          <span class="title-status"></span>
+          <div class="font-controls">
+            <button data-action="font-decrease" title="Decrease font size">
+              <svg
+                width="16"
+                height="16"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+              >
+                <line x1="5" y1="12" x2="19" y2="12"></line>
+              </svg>
+            </button>
+            <span class="font-size-label">16px</span>
+            <button data-action="font-increase" title="Increase font size">
+              <svg
+                width="16"
+                height="16"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+              >
+                <line x1="12" y1="5" x2="12" y2="19"></line>
+                <line x1="5" y1="12" x2="19" y2="12"></line>
+              </svg>
+            </button>
+          </div>
+          <button class="layout-toggle-btn" data-action="toggle-layout" title="Toggle Layout (Centered/Full-width)">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+              <line x1="9" y1="3" x2="9" y2="21"></line>
+              <line x1="15" y1="3" x2="15" y2="21"></line>
+            </svg>
+            <span class="layout-label">Centered</span>
+          </button>
+          <div class="actions">
+            <button data-action="open-browser" title="Open Browser" class="browser-btn">
+              <svg
+                width="18"
+                height="18"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+              >
+                <circle cx="12" cy="12" r="10" />
+                <circle cx="12" cy="12" r="4" />
+                <line x1="21.17" y1="8" x2="12" y2="8" />
+                <line x1="3.95" y1="6.06" x2="8.54" y2="14" />
+                <line x1="10.88" y1="21.94" x2="15.46" y2="14" />
+              </svg>
+            </button>
+            <button data-action="split-note" title="Split View">
+              <svg
+                width="18"
+                height="18"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+              >
+                <rect x="3" y="3" width="18" height="18" rx="2" />
+                <line x1="12" y1="3" x2="12" y2="21" />
+              </svg>
+            </button>
+            <button data-action="open-window" title="Open in Window">
+              <svg
+                width="18"
+                height="18"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+              >
+                <rect x="3" y="4" width="18" height="16" rx="2" />
+                <path d="M3 8h18" />
+              </svg>
+            </button>
+            <button data-action="fullscreen" title="Fullscreen (F12)">
+              <svg
+                width="18"
+                height="18"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+              >
+                <path
+                  d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"
+                ></path>
+              </svg>
+            </button>
+            <button
+              data-action="settings"
+              title="Folder & Tags"
+              class="settings-btn"
+            >
+              <svg
+                width="18"
+                height="18"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+              >
+                <path
+                  d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"
+                ></path>
+                <line x1="7" y1="7" x2="7.01" y2="7"></line>
+              </svg>
+            </button>
+            <div class="settings-dropdown" style="display: none">
+              <div class="settings-section">
+                <label>Folder</label>
+                <select class="folder-dropdown"></select>
+              </div>
+              <div class="settings-section">
+                <label>Tags</label>
+                <div class="tags-dropdown chips"></div>
+                <input class="tag-input-dropdown" placeholder="Add tag…" />
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="meta" style="display: none">
+          <select class="folder"></select>
+          <div class="tags chips"></div>
+          <input class="tag-input" placeholder="Add tag…" />
+        </div>
+        <div
+          class="content editable"
+          contenteditable="true"
+          spellcheck="false"
+          placeholder="Start typing..."
+        ></div>
+      </div>
+    </template>
+
+    <template id="window-template">
+      <div
+        class="window"
+        style="left: 120px; top: 120px; width: 480px; height: 360px"
+      >
+        <div class="window-title">
+          <span class="window-name"></span>
+          <div class="window-controls">
+            <button data-action="minimize" title="Minimize">
+              <svg
+                width="16"
+                height="16"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+              >
+                <line x1="5" y1="12" x2="19" y2="12"></line>
+              </svg>
+            </button>
+            <button data-action="close" title="Close">
+              <svg
+                width="16"
+                height="16"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+              >
+                <line x1="18" y1="6" x2="6" y2="18"></line>
+                <line x1="6" y1="6" x2="18" y2="18"></line>
+              </svg>
+            </button>
+          </div>
+        </div>
+        <div class="window-body"></div>
+      </div>
+    </template>
+
+    <template id="browser-template">
+      <div class="browser-container">
+        <div class="browser-toolbar">
+          <button class="browser-nav-btn" data-action="back" title="Back">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polyline points="15 18 9 12 15 6"></polyline>
+            </svg>
+          </button>
+          <button class="browser-nav-btn" data-action="forward" title="Forward">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polyline points="9 18 15 12 9 6"></polyline>
+            </svg>
+          </button>
+          <button class="browser-nav-btn" data-action="refresh" title="Refresh">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polyline points="23 4 23 10 17 10"></polyline>
+              <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path>
+            </svg>
+          </button>
+          <input type="text" class="browser-url-bar" placeholder="Enter URL or search..." />
+          <button class="browser-nav-btn" data-action="go" title="Go">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polyline points="9 18 15 12 9 6"></polyline>
+            </svg>
+          </button>
+          <button class="browser-nav-btn" data-action="open-external" title="Open in External Browser">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
+              <polyline points="15 3 21 3 21 9"></polyline>
+              <line x1="10" y1="14" x2="21" y2="3"></line>
+            </svg>
+          </button>
+        </div>
+        <div class="browser-content">
+          <div class="browser-message">
+            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="10" />
+              <circle cx="12" cy="12" r="4" />
+              <line x1="21.17" y1="8" x2="12" y2="8" />
+              <line x1="3.95" y1="6.06" x2="8.54" y2="14" />
+              <line x1="10.88" y1="21.94" x2="15.46" y2="14" />
+            </svg>
+            <h3>Loading DuckDuckGo...</h3>
+            <p>Built-in browser powered by DuckDuckGo HTML</p>
+            <p class="browser-note">Note: Some sites block embedding. Click the external link icon to open in your default browser.</p>
+          </div>
+          <iframe class="browser-frame" style="display: none;"></iframe>
+        </div>
+      </div>
+    </template>
+
+    <script src="scripts/app.js"></script>
+    <script src="scripts/custom-features.js"></script>
+  </body>
+</html>
