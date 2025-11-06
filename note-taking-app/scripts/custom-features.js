@@ -360,6 +360,289 @@ function setupEditorFeatures(container) {
       : [];
 
   editors.forEach((editor) => {
+    // Set up editor tools menu
+    const editorToolsMenu = editor.querySelector('.editor-tools-menu');
+    const editorToolsBtn = editor.querySelector('.editor-tools-btn');
+    if (editorToolsMenu && editorToolsBtn && !editorToolsBtn.hasAttribute('data-tools-handled')) {
+      editorToolsBtn.setAttribute('data-tools-handled', 'true');
+      
+      editorToolsBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        editorToolsMenu.classList.toggle('open');
+      });
+      
+      // Close menu when clicking outside
+      document.addEventListener('click', (e) => {
+        if (!editorToolsMenu.contains(e.target)) {
+          editorToolsMenu.classList.remove('open');
+        }
+      });
+      
+      // Handle tools menu actions
+      const duplicateBtn = editorToolsMenu.querySelector('.editor-duplicate-btn');
+      if (duplicateBtn) {
+        duplicateBtn.addEventListener('click', () => {
+          document.getElementById('duplicateBtn')?.click();
+          editorToolsMenu.classList.remove('open');
+        });
+      }
+      
+      const deleteBtn = editorToolsMenu.querySelector('.editor-delete-btn');
+      if (deleteBtn) {
+        deleteBtn.addEventListener('click', (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          editorToolsMenu.classList.remove('open');
+          
+          // Trigger the actual delete button with a proper click event
+          setTimeout(() => {
+            const btn = document.getElementById('deleteBtn');
+            if (btn) {
+              // Create and dispatch a proper mouse event
+              const clickEvent = new MouseEvent('click', {
+                bubbles: true,
+                cancelable: true,
+                view: window
+              });
+              btn.dispatchEvent(clickEvent);
+            }
+          }, 50);
+        });
+      }
+      
+      const trashBtn = editorToolsMenu.querySelector('.editor-trash-btn');
+      if (trashBtn) {
+        trashBtn.addEventListener('click', () => {
+          document.getElementById('trashBtn')?.click();
+          editorToolsMenu.classList.remove('open');
+        });
+      }
+      
+      const exportNotesBtn = editorToolsMenu.querySelector('.editor-export-notes-btn');
+      if (exportNotesBtn) {
+        exportNotesBtn.addEventListener('click', () => {
+          document.getElementById('exportBtn')?.click();
+          editorToolsMenu.classList.remove('open');
+        });
+      }
+      
+      const importBtn = editorToolsMenu.querySelector('.editor-import-btn');
+      if (importBtn) {
+        importBtn.addEventListener('click', () => {
+          document.getElementById('importBtn')?.click();
+          editorToolsMenu.classList.remove('open');
+        });
+      }
+      
+      const exportHtmlBtn = editorToolsMenu.querySelector('.editor-export-html-btn');
+      if (exportHtmlBtn) {
+        exportHtmlBtn.addEventListener('click', () => {
+          document.getElementById('exportHtmlBtn')?.click();
+          editorToolsMenu.classList.remove('open');
+        });
+      }
+      
+      const exportPdfBtn = editorToolsMenu.querySelector('.editor-export-pdf-btn');
+      if (exportPdfBtn) {
+        exportPdfBtn.addEventListener('click', () => {
+          document.getElementById('exportPdfBtn')?.click();
+          editorToolsMenu.classList.remove('open');
+        });
+      }
+    }
+
+    // Set up editor menu (three-dot menu)
+    const editorMenu = editor.querySelector('.editor-menu');
+    const editorMenuBtn = editor.querySelector('.editor-menu-btn');
+    if (editorMenu && editorMenuBtn && !editorMenuBtn.hasAttribute('data-menu-handled')) {
+      editorMenuBtn.setAttribute('data-menu-handled', 'true');
+      
+      editorMenuBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        editorMenu.classList.toggle('open');
+      });
+      
+      // Close menu when clicking outside
+      document.addEventListener('click', (e) => {
+        if (!editorMenu.contains(e.target)) {
+          editorMenu.classList.remove('open');
+        }
+      });
+      
+      // Prevent menu from closing when clicking inside
+      editorMenu.addEventListener('click', (e) => {
+        // Only stop propagation for font controls and menu items
+        if (e.target.closest('.font-controls-menu') || e.target.closest('.menu-item')) {
+          e.stopPropagation();
+        }
+      });
+
+      // Set up font size controls in menu
+      const contentEditable = editor.querySelector('.content.editable');
+      const fontSizeLabel = editorMenu.querySelector('.font-size-label');
+      const fontDecreaseBtn = editorMenu.querySelector('[data-action="font-decrease"]');
+      const fontIncreaseBtn = editorMenu.querySelector('[data-action="font-increase"]');
+      
+      let editorFontSize = 16;
+      
+      if (fontDecreaseBtn && contentEditable) {
+        fontDecreaseBtn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          editorFontSize = Math.max(12, editorFontSize - 2);
+          contentEditable.style.fontSize = editorFontSize + 'px';
+          if (fontSizeLabel) fontSizeLabel.textContent = editorFontSize + 'px';
+        });
+      }
+      
+      if (fontIncreaseBtn && contentEditable) {
+        fontIncreaseBtn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          editorFontSize = Math.min(32, editorFontSize + 2);
+          contentEditable.style.fontSize = editorFontSize + 'px';
+          if (fontSizeLabel) fontSizeLabel.textContent = editorFontSize + 'px';
+        });
+      }
+
+      // Set up layout toggle in menu
+      const layoutToggleBtn = editorMenu.querySelector('[data-action="toggle-layout"]');
+      const layoutLabel = editorMenu.querySelector('.layout-label');
+      
+      if (layoutToggleBtn && contentEditable) {
+        // Check current layout state
+        let isFullWidth = contentEditable.classList.contains('layout-full');
+        
+        layoutToggleBtn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          isFullWidth = !isFullWidth;
+          
+          if (isFullWidth) {
+            contentEditable.classList.add('layout-full');
+            contentEditable.classList.remove('layout-centered');
+          } else {
+            contentEditable.classList.remove('layout-full');
+            contentEditable.classList.add('layout-centered');
+          }
+          
+          if (layoutLabel) {
+            layoutLabel.textContent = isFullWidth ? "Full-width Layout" : "Centered Layout";
+          }
+          console.log("✓ Layout toggled:", isFullWidth ? "full" : "centered");
+        });
+      }
+
+      // Set up highlight palette in editor menu
+      const editorPalette = editorMenu.querySelector('.editor-palette');
+      if (editorPalette) {
+        editorPalette.querySelectorAll('button[data-color]').forEach((btn) => {
+          btn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            if (window.state) {
+              window.state.currentHighlightColor = btn.dataset.color;
+              // Update active state
+              editorPalette.querySelectorAll('button[data-color]').forEach((b) => b.classList.remove('active'));
+              btn.classList.add('active');
+            }
+          });
+        });
+        // Set initial active state
+        const firstBtn = editorPalette.querySelector('button[data-color]');
+        if (firstBtn) {
+          firstBtn.classList.add('active');
+          if (window.state) {
+            window.state.currentHighlightColor = firstBtn.dataset.color;
+          }
+        }
+      }
+
+      // Set up auto highlight toggle in editor menu
+      const autoHlToggle = editorMenu.querySelector('.editor-auto-hl-toggle');
+      const autoHlLabel = editorMenu.querySelector('.auto-hl-label');
+      if (autoHlToggle) {
+        autoHlToggle.addEventListener('click', (e) => {
+          e.stopPropagation();
+          if (window.state) {
+            window.state.autoHighlight = !window.state.autoHighlight;
+            if (autoHlLabel) {
+              autoHlLabel.textContent = 'Auto Highlight: ' + (window.state.autoHighlight ? 'ON' : 'OFF');
+            }
+          }
+        });
+      }
+
+      // Set up lock note button in editor menu
+      const lockBtn = editorMenu.querySelector('[data-action="lock-note"]');
+      const lockLabel = editorMenu.querySelector('.lock-label');
+      if (lockBtn) {
+        // Function to update lock button UI based on current state
+        const updateLockUI = () => {
+          const contentEditable = editor.querySelector('.content.editable');
+          if (contentEditable) {
+            const isLocked = contentEditable.getAttribute('contenteditable') === 'false';
+            const svg = lockBtn.querySelector('svg');
+            
+            if (isLocked) {
+              // Currently locked - show unlock option with OPEN lock icon
+              svg.innerHTML = `
+                <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                <path d="M7 11V7a5 5 0 0 1 9.9-1"></path>
+              `;
+              if (lockLabel) lockLabel.textContent = 'Unlock Note (Ctrl+L)';
+            } else {
+              // Currently unlocked - show lock option with CLOSED lock icon
+              svg.innerHTML = `
+                <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+              `;
+              if (lockLabel) lockLabel.textContent = 'Lock Note (Ctrl+L)';
+            }
+          }
+        };
+        
+        // Initial UI update
+        updateLockUI();
+        
+        lockBtn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          
+          console.log('Lock button clicked');
+          
+          // Use the existing toggleNoteLock function
+          if (typeof window.toggleNoteLock === 'function') {
+            console.log('Calling toggleNoteLock');
+            window.toggleNoteLock();
+            
+            // Update UI after a short delay to ensure state has changed
+            setTimeout(() => {
+              console.log('Updating lock UI');
+              updateLockUI();
+            }, 100);
+          } else {
+            console.error('toggleNoteLock function not found on window');
+          }
+          
+          // Keep menu open - don't close it
+        });
+        
+        // Update UI when menu opens to reflect current state
+        const editorMenuBtn = editor.querySelector('.editor-menu-btn');
+        if (editorMenuBtn) {
+          editorMenuBtn.addEventListener('click', () => {
+            setTimeout(() => {
+              updateLockUI();
+            }, 10);
+          });
+        }
+      }
+
+      // Close menu when opening in window
+      const openWindowBtn = editorMenu.querySelector('[data-action="open-window"]');
+      if (openWindowBtn) {
+        openWindowBtn.addEventListener('click', () => {
+          editorMenu.classList.remove('open');
+        });
+      }
+    }
+
     // Set up fullscreen button
     const fullscreenBtn = editor.querySelector('[data-action="fullscreen"]');
     if (fullscreenBtn && !fullscreenBtn.hasAttribute("data-custom-handled")) {
@@ -385,6 +668,34 @@ function setupEditorFeatures(container) {
           }
         }
       });
+
+      // Mouse wheel zoom for font size (Ctrl + Scroll)
+      let editorFontSize = parseInt(window.getComputedStyle(contentEditable).fontSize) || 16;
+      contentEditable.addEventListener("wheel", (e) => {
+        if (e.ctrlKey || e.metaKey) {
+          e.preventDefault();
+          
+          // Determine zoom direction
+          if (e.deltaY < 0) {
+            // Scroll up - increase font size
+            editorFontSize = Math.min(32, editorFontSize + 2);
+          } else {
+            // Scroll down - decrease font size
+            editorFontSize = Math.max(12, editorFontSize - 2);
+          }
+          
+          contentEditable.style.fontSize = editorFontSize + 'px';
+          
+          // Update font size label in the menu if it exists
+          const editorMenu = editor.querySelector('.editor-menu');
+          if (editorMenu) {
+            const fontSizeLabel = editorMenu.querySelector('.font-size-label');
+            if (fontSizeLabel) {
+              fontSizeLabel.textContent = editorFontSize + 'px';
+            }
+          }
+        }
+      }, { passive: false });
     }
   });
 }

@@ -704,33 +704,11 @@ const Storage = {
       }
       return showContextMenu(e.clientX, e.clientY, handlers, "folder");
     }
-    // Editor selection
+    // Editor selection - context menu disabled
     const content = target.closest(".content.editable");
     if (content) {
-      const editor = content.closest(".editor");
-      const noteId = editor?.dataset.noteId;
-      const note = noteId ? getNote(noteId) : null;
-      return showContextMenu(
-        e.clientX,
-        e.clientY,
-        {
-          onInsertTable: () => {
-            insertTablePlaceholder();
-          },
-          onHighlight: () => {
-            applyHighlightToSelection(state.currentHighlightColor);
-            if (note) {
-              note.contentHtml = content.innerHTML;
-              saveNotes();
-              // Trigger input event with formatting flag for history save
-              const inputEvent = new Event("input", { bubbles: true });
-              inputEvent.isFormatting = true;
-              content.dispatchEvent(inputEvent);
-            }
-          },
-        },
-        "editor"
-      );
+      // Context menu disabled for editor content area
+      return;
     }
   });
 
@@ -843,7 +821,23 @@ const Storage = {
 
   function updateTrashButton() {
     if (el.trashBtn) {
-      el.trashBtn.textContent =
+      // Find or create the text span to preserve the SVG icon
+      let textSpan = el.trashBtn.querySelector('.trash-text');
+      if (!textSpan) {
+        // Create a span for the text and move existing text into it
+        textSpan = document.createElement('span');
+        textSpan.className = 'trash-text';
+        // Move any existing text nodes to the span
+        const textNodes = Array.from(el.trashBtn.childNodes).filter(node => node.nodeType === 3);
+        textNodes.forEach(node => {
+          if (node.textContent.trim()) {
+            textSpan.textContent = node.textContent.trim();
+            node.remove();
+          }
+        });
+        el.trashBtn.appendChild(textSpan);
+      }
+      textSpan.textContent =
         state.trash.length > 0 ? `Trash (${state.trash.length})` : "Trash";
     }
   }
@@ -2233,7 +2227,10 @@ const Storage = {
 
     // Highlighting handlers
     content.addEventListener("mouseup", () => {
+      // Don't auto-highlight if note is locked
       if (!state.autoHighlight) return;
+      if (content.getAttribute("contenteditable") === "false") return;
+      
       applyHighlightToSelection(state.currentHighlightColor);
       note.contentHtml = content.innerHTML;
       saveHistoryIfChanged();
@@ -3427,20 +3424,28 @@ const Storage = {
     menuEl.classList.toggle("open");
   }
   function closeMenus() {
-    el.toolsMenu.classList.remove("open");
+    if (el.toolsMenu) el.toolsMenu.classList.remove("open");
     el.settingsMenu.classList.remove("open");
   }
-  el.toolsBtn.addEventListener("click", (e) => {
-    e.stopPropagation();
-    toggleMenu(el.toolsMenu);
-    el.settingsMenu.classList.remove("open");
-  });
+  if (el.toolsBtn) {
+    el.toolsBtn.addEventListener("click", (e) => {
+      e.stopPropagation();
+      toggleMenu(el.toolsMenu);
+      el.settingsMenu.classList.remove("open");
+    });
+  }
   el.settingsBtn.addEventListener("click", (e) => {
     e.stopPropagation();
     toggleMenu(el.settingsMenu);
-    el.toolsMenu.classList.remove("open");
+    if (el.toolsMenu) el.toolsMenu.classList.remove("open");
   });
-  document.addEventListener("click", closeMenus);
+  document.addEventListener("click", (e) => {
+    // Don't close menus if clicking inside them
+    if ((el.toolsMenu && el.toolsMenu.contains(e.target)) || el.settingsMenu.contains(e.target)) {
+      return;
+    }
+    closeMenus();
+  });
 
   // Tools actions
   if (el.duplicateBtn) {
@@ -3487,16 +3492,18 @@ const Storage = {
       renderSidebar();
     });
   }
-  el.exportBtn.addEventListener("click", () => {
-    const blob = new Blob([JSON.stringify(state.notes, null, 2)], {
-      type: "application/json",
+  if (el.exportBtn) {
+    el.exportBtn.addEventListener("click", () => {
+      const blob = new Blob([JSON.stringify(state.notes, null, 2)], {
+        type: "application/json",
+      });
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(blob);
+      a.download = "notes-export.json";
+      a.click();
+      URL.revokeObjectURL(a.href);
     });
-    const a = document.createElement("a");
-    a.href = URL.createObjectURL(blob);
-    a.download = "notes-export.json";
-    a.click();
-    URL.revokeObjectURL(a.href);
-  });
+  }
   if (el.exportHtmlBtn) {
     el.exportHtmlBtn.addEventListener("click", () => {
       const n = getActive(state.right.active ? "right" : "left");
@@ -3541,7 +3548,9 @@ const Storage = {
     });
   }
 
-  el.importBtn.addEventListener("click", () => el.importInput.click());
+  if (el.importBtn) {
+    el.importBtn.addEventListener("click", () => el.importInput.click());
+  }
   el.importInput.addEventListener("change", async (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -3688,6 +3697,67 @@ const Storage = {
   }
   el.autoBackupBtn.addEventListener("click", enableAutoBackup);
 
+  // About App button
+  const aboutAppBtn = document.getElementById("aboutAppBtn");
+  if (aboutAppBtn) {
+    aboutAppBtn.addEventListener("click", () => {
+      showAboutModal();
+    });
+  }
+
+  function showAboutModal() {
+    const modal = document.createElement("div");
+    modal.className = "modal-overlay";
+    modal.innerHTML = `
+      <div class="modal about-modal">
+        <div class="modal-header">
+          <span class="modal-title">About My Notes</span>
+          <button class="modal-x" aria-label="Close">×</button>
+        </div>
+        <div class="modal-body">
+          <div class="about-content">
+            <div class="about-icon">
+              <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                <path d="M12 2L2 7l10 5 10-5-10-5z"></path>
+                <path d="M2 17l10 5 10-5"></path>
+                <path d="M2 12l10 5 10-5"></path>
+              </svg>
+            </div>
+            <h2>My Notes</h2>
+            <div class="about-info">
+              <p><strong>Version:</strong> 7.0</p>
+              <p><strong>Build:</strong> 7</p>
+              <p><strong>Last Updated:</strong> November 6, 2025</p>
+              <p><strong>Created by:</strong> Momen</p>
+            </div>
+            <div class="about-description">
+              <p>Built to show that anyone can create their own tools. Freedom is always an option to go for.</p>
+              <p style="margin-top: 8px; font-style: italic; color: var(--muted);">A powerful note-taking application with markdown support, themes, and workspaces.</p>
+            </div>
+          </div>
+        </div>
+        <div class="modal-actions">
+          <button class="btn primary modal-close">Close</button>
+        </div>
+      </div>
+    `;
+    
+    document.body.appendChild(modal);
+    
+    // Close handlers
+    const closeBtn = modal.querySelector(".modal-x");
+    const closeActionBtn = modal.querySelector(".modal-close");
+    const overlay = modal;
+    
+    const closeModal = () => modal.remove();
+    
+    closeBtn.addEventListener("click", closeModal);
+    closeActionBtn.addEventListener("click", closeModal);
+    overlay.addEventListener("click", (e) => {
+      if (e.target === overlay) closeModal();
+    });
+  }
+
   // Highlight palette & toggle
   if (el.hlPalette) {
     el.hlPalette.querySelectorAll("button[data-color]").forEach((btn) => {
@@ -3733,19 +3803,21 @@ const Storage = {
   }
 
   // Folders
-  el.newFolderBtn.addEventListener("click", async () => {
-    const name = await modalPrompt("New Folder", "Folder name");
-    if (!name) return;
-    const f = { id: uid(), name, parentId: null };
-    state.folders.push(f);
-    saveFolders();
-    // refresh open editors' selects
-    document.querySelectorAll("select.folder").forEach((sel) => {
-      const current = sel.value;
-      renderFolderOptions(sel, current);
+  if (el.newFolderBtn) {
+    el.newFolderBtn.addEventListener("click", async () => {
+      const name = await modalPrompt("New Folder", "Folder name");
+      if (!name) return;
+      const f = { id: uid(), name, parentId: null };
+      state.folders.push(f);
+      saveFolders();
+      // refresh open editors' selects
+      document.querySelectorAll("select.folder").forEach((sel) => {
+        const current = sel.value;
+        renderFolderOptions(sel, current);
+      });
+      renderSidebar();
     });
-    renderSidebar();
-  });
+  }
   function renderFolderOptions(selectEl, selectedId) {
     selectEl.innerHTML = "";
     const optNone = document.createElement("option");
@@ -3927,12 +3999,20 @@ const Storage = {
   function handleHighlightClick(e) {
     const target = e.target;
     if (target.classList.contains("hl")) {
+      // Don't remove highlight if note is locked
+      const content = target.closest(".content.editable");
+      if (content && content.getAttribute("contenteditable") === "false") {
+        // Prevent any action when locked
+        e.preventDefault();
+        e.stopPropagation();
+        return;
+      }
+      
       // Create a text node with the same content
       const text = document.createTextNode(target.textContent);
       // Replace the highlight span with just the text
       target.parentNode.replaceChild(text, target);
       // Update the note content
-      const content = document.querySelector(".content.editable");
       if (content && content.closest(".pane").querySelector(".editor.active")) {
         const noteId = content.closest(".pane").querySelector(".editor.active")
           .dataset.id;
@@ -3957,6 +4037,14 @@ const Storage = {
 
     const range = sel.getRangeAt(0);
     if (range.collapsed) return;
+    
+    // Don't allow highlighting if note is locked
+    const editableContent = range.commonAncestorContainer.nodeType === 3 
+      ? range.commonAncestorContainer.parentElement.closest('.content.editable')
+      : range.commonAncestorContainer.closest('.content.editable');
+    if (editableContent && editableContent.getAttribute("contenteditable") === "false") {
+      return;
+    }
 
     // Create highlight span
     const highlightSpan = document.createElement("span");
@@ -4704,6 +4792,9 @@ const Storage = {
     }
   }
 
+  // Expose toggleNoteLock to window for use in custom-features.js
+  window.toggleNoteLock = toggleNoteLock;
+
   // Add copy handler for images
   document.addEventListener("copy", (e) => {
     console.log("Copy event triggered");
@@ -5128,6 +5219,10 @@ const Storage = {
         el.autoHlToggle.textContent =
           "Auto Highlight: " + (state.autoHighlight ? "ON" : "OFF");
       }
+      // Update all editor menu labels
+      document.querySelectorAll('.auto-hl-label').forEach(label => {
+        label.textContent = "Auto Highlight: " + (state.autoHighlight ? "ON" : "OFF");
+      });
     }
 
     // Ctrl+T: Insert Table (works even while typing in editor)
@@ -5142,8 +5237,8 @@ const Storage = {
       toggleNoteLock();
     }
 
-    // Ctrl+.: Toggle sidebar
-    if ((e.ctrlKey || e.metaKey) && e.key === "." && !isTyping) {
+    // Ctrl+.: Toggle sidebar (works globally, even while typing)
+    if ((e.ctrlKey || e.metaKey) && e.key === ".") {
       e.preventDefault();
       el.toggleSidebarBtn.click();
     }
