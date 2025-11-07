@@ -21,6 +21,10 @@ contextBridge.exposeInMainWorld('electronAPI', {
   // Utility
   getDataDir: () => ipcRenderer.invoke('get-data-dir'),
   
+  // Window close handling
+  onAppCloseRequested: (callback) => ipcRenderer.on('app-close-requested', callback),
+  confirmAppClose: () => ipcRenderer.send('app-close-confirmed'),
+  
   // Check if running in Electron
   isElectron: true,
 });

@@ -1,0 +1,373 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>My Notes - Setup Guide</title>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      body {
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+          sans-serif;
+        background: linear-gradient(135deg, #cfd8ff 0%, #4f9eff 100%);
+        min-height: 100vh;
+        padding: 40px 20px;
+      }
+
+      .container {
+        max-width: 800px;
+        margin: 0 auto;
+        background: white;
+        border-radius: 16px;
+        padding: 40px;
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+      }
+
+      h1 {
+        color: #1f2937;
+        margin-bottom: 8px;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+      }
+
+      .logo {
+        width: 48px;
+        height: 48px;
+      }
+
+      .subtitle {
+        color: #6b7280;
+        margin-bottom: 32px;
+        font-size: 16px;
+      }
+
+      .status {
+        background: #fef3c7;
+        border: 2px solid #f59e0b;
+        color: #92400e;
+        padding: 16px;
+        border-radius: 8px;
+        margin-bottom: 32px;
+      }
+
+      .status.success {
+        background: #d1fae5;
+        border-color: #10b981;
+        color: #065f46;
+      }
+
+      .status.error {
+        background: #fee2e2;
+        border-color: #ef4444;
+        color: #991b1b;
+      }
+
+      h2 {
+        color: #374151;
+        margin-top: 32px;
+        margin-bottom: 16px;
+        font-size: 20px;
+      }
+
+      .steps {
+        list-style: none;
+        counter-reset: step-counter;
+      }
+
+      .steps li {
+        counter-increment: step-counter;
+        margin-bottom: 20px;
+        padding-left: 40px;
+        position: relative;
+      }
+
+      .steps li::before {
+        content: counter(step-counter);
+        position: absolute;
+        left: 0;
+        top: 0;
+        background: #667eea;
+        color: white;
+        width: 28px;
+        height: 28px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: bold;
+        font-size: 14px;
+      }
+
+      .steps li strong {
+        color: #1f2937;
+        display: block;
+        margin-bottom: 4px;
+      }
+
+      .steps li p {
+        color: #6b7280;
+        font-size: 14px;
+        line-height: 1.6;
+      }
+
+      code {
+        background: #f3f4f6;
+        padding: 2px 6px;
+        border-radius: 4px;
+        font-family: "Courier New", monospace;
+        font-size: 13px;
+        color: #dc2626;
+      }
+
+      .btn {
+        display: inline-block;
+        padding: 12px 24px;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        text-decoration: none;
+        border-radius: 8px;
+        font-weight: 600;
+        margin-top: 24px;
+        transition: transform 0.2s;
+      }
+
+      .btn:hover {
+        transform: translateY(-2px);
+      }
+
+      .btn.secondary {
+        background: #e5e7eb;
+        color: #374151;
+      }
+
+      .features {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 16px;
+        margin-top: 24px;
+      }
+
+      .feature {
+        background: #f9fafb;
+        padding: 16px;
+        border-radius: 8px;
+        border: 1px solid #e5e7eb;
+      }
+
+      .feature h3 {
+        font-size: 14px;
+        color: #1f2937;
+        margin-bottom: 8px;
+      }
+
+      .feature p {
+        font-size: 13px;
+        color: #6b7280;
+        line-height: 1.5;
+      }
+
+      .warning {
+        background: #fef3c7;
+        border-left: 4px solid #f59e0b;
+        padding: 12px 16px;
+        margin: 16px 0;
+        border-radius: 4px;
+      }
+
+      .warning strong {
+        color: #92400e;
+        display: block;
+        margin-bottom: 4px;
+      }
+
+      .warning p {
+        color: #78350f;
+        font-size: 14px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <h1>
+        <svg class="logo" viewBox="0 0 64 64">
+          <rect rx="12" ry="12" width="64" height="64" fill="#fbbf24" />
+          <path
+            d="M18 20h28v4H18zm0 10h28v4H18zm0 10h18v4H18z"
+            fill="#1f2937"
+          />
+        </svg>
+        My Notes - Cloud Edition
+      </h1>
+      <p class="subtitle">Your notes, now powered by Firebase ☁️</p>
+
+      <div class="status" id="statusBox">
+        <strong>⚠️ Setup Required</strong>
+        <p>
+          Firebase configuration is not complete. Follow the steps below to get
+          started.
+        </p>
+      </div>
+
+      <h2>🎯 What's New?</h2>
+      <div class="features">
+        <div class="feature">
+          <h3>🔐 User Accounts</h3>
+          <p>Secure login with email/password or Google</p>
+        </div>
+        <div class="feature">
+          <h3>☁️ Cloud Storage</h3>
+          <p>Notes saved to Firebase, never lose data</p>
+        </div>
+        <div class="feature">
+          <h3>🔒 Private Data</h3>
+          <p>Each user has isolated, secure storage</p>
+        </div>
+        <div class="feature">
+          <h3>📸 Image Upload</h3>
+          <p>Store images in Firebase Storage</p>
+        </div>
+      </div>
+
+      <h2>🚀 Quick Setup (5 minutes)</h2>
+      <ol class="steps">
+        <li>
+          <strong>Create Firebase Project</strong>
+          <p>
+            Go to
+            <a href="https://console.firebase.google.com/" target="_blank"
+              >Firebase Console</a
+            >
+            and create a new project. Name it something like "my-notes-app".
+          </p>
+        </li>
+
+        <li>
+          <strong>Enable Authentication</strong>
+          <p>
+            In Firebase Console, go to <strong>Build → Authentication</strong>.
+            Click "Get started", then enable <strong>Email/Password</strong> and
+            <strong>Google</strong> sign-in methods.
+          </p>
+        </li>
+
+        <li>
+          <strong>Enable Firestore Database</strong>
+          <p>
+            Go to <strong>Build → Firestore Database</strong>. Click "Create
+            database" and start in <strong>production mode</strong>. Choose a
+            location close to you.
+          </p>
+        </li>
+
+        <li>
+          <strong>Enable Firebase Storage</strong>
+          <p>
+            Go to <strong>Build → Storage</strong>. Click "Get started" and use
+            <strong>production mode</strong>. Use the same location as
+            Firestore.
+          </p>
+        </li>
+
+        <li>
+          <strong>Get Your Configuration</strong>
+          <p>
+            In Firebase Console, click the
+            <strong>Web icon (&lt;/&gt;)</strong> to add a web app. Register
+            your app and <strong>copy the configuration object</strong>.
+          </p>
+        </li>
+
+        <li>
+          <strong>Update Config File</strong>
+          <p>
+            Open <code>scripts/firebase-config.js</code> in a text editor.
+            Replace the placeholder values with your actual Firebase
+            configuration from step 5.
+          </p>
+        </li>
+
+        <li>
+          <strong>Set Security Rules</strong>
+          <p>
+            Copy the security rules from <code>FIREBASE_SETUP.md</code> and
+            paste them into Firestore Rules and Storage Rules in Firebase
+            Console. Click "Publish".
+          </p>
+        </li>
+
+        <li>
+          <strong>Start Using!</strong>
+          <p>
+            Open <code>login.html</code> in your browser, create an account, and
+            start taking notes!
+          </p>
+        </li>
+      </ol>
+
+      <div class="warning">
+        <strong>⚠️ Important</strong>
+        <p>
+          You must complete the Firebase setup before the app will work. Without
+          proper configuration, you won't be able to login or save notes.
+        </p>
+      </div>
+
+      <h2>📚 Documentation</h2>
+      <p style="color: #6b7280; margin-bottom: 16px">
+        For detailed instructions, troubleshooting, and advanced features:
+      </p>
+      <ul style="list-style: none; padding: 0">
+        <li style="margin-bottom: 8px">
+          📖 <a href="FIREBASE_SETUP.md" target="_blank">FIREBASE_SETUP.md</a> -
+          Complete setup guide
+        </li>
+        <li style="margin-bottom: 8px">
+          🔄
+          <a href="MIGRATION_GUIDE.md" target="_blank">MIGRATION_GUIDE.md</a> -
+          Migration information
+        </li>
+        <li style="margin-bottom: 8px">
+          💻
+          <a href="https://firebase.google.com/docs" target="_blank"
+            >Firebase Documentation</a
+          >
+          - Official docs
+        </li>
+      </ul>
+
+      <div
+        style="
+          margin-top: 32px;
+          padding-top: 32px;
+          border-top: 2px solid #e5e7eb;
+        "
+      >
+        <a href="login.html" class="btn">Open Login Page →</a>
+        <a
+          href="FIREBASE_SETUP.md"
+          class="btn secondary"
+          style="margin-left: 12px"
+          >Read Setup Guide</a
+        >
+      </div>
+
+      <p
+        style="
+          color: #9ca3af;
+          font-size: 13px;
+          margin-top: 32px;
+          text-align: center;
+        "
+      >
+        Need help? Check the documentation files or Firebase Console for
+        troubleshooting.
+      </p>
+    </div>
+  </body>
+</html>

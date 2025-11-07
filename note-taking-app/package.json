@@ -37,7 +37,8 @@
     }
   },
   "dependencies": {
-    "electron-store": "^8.1.0"
+    "electron-store": "^8.1.0",
+    "serve-handler": "^6.1.6"
   },
   "devDependencies": {
     "cross-env": "^7.0.3",

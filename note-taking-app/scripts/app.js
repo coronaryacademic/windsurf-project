@@ -1,9 +1,15 @@
-// Storage adapter: uses Electron file system if available, falls back to localStorage
+// Import Firebase Service
+import firebaseService from './firebase-service.js';
+
+// Storage adapter: uses Firebase, Electron file system, or localStorage
 const Storage = {
   isElectron: typeof window.electronAPI !== "undefined",
+  useFirebase: true, // Set to true to use Firebase
 
   async loadNotes() {
-    if (this.isElectron) {
+    if (this.useFirebase) {
+      return await firebaseService.loadNotes();
+    } else if (this.isElectron) {
       return await window.electronAPI.readNotes();
     } else {
       try {
@@ -16,7 +22,9 @@ const Storage = {
   },
 
   async saveNotes(data) {
-    if (this.isElectron) {
+    if (this.useFirebase) {
+      await firebaseService.saveNotes(data);
+    } else if (this.isElectron) {
       await window.electronAPI.writeNotes(data);
     } else {
       localStorage.setItem("notes.offline.v1", JSON.stringify(data));
@@ -24,7 +32,9 @@ const Storage = {
   },
 
   async loadFolders() {
-    if (this.isElectron) {
+    if (this.useFirebase) {
+      return await firebaseService.loadFolders();
+    } else if (this.isElectron) {
       return await window.electronAPI.readFolders();
     } else {
       try {
@@ -37,15 +47,25 @@ const Storage = {
   },
 
   async saveFolders(data) {
-    if (this.isElectron) {
-      await window.electronAPI.writeFolders(data);
-    } else {
+    try {
+      if (this.useFirebase) {
+        await firebaseService.saveFolders(data);
+      } else if (this.isElectron) {
+        await window.electronAPI.writeFolders(data);
+      } else {
+        localStorage.setItem("notes.folders.v1", JSON.stringify(data));
+      }
+    } catch (error) {
+      console.error('Error saving folders:', error);
+      // Fallback to localStorage if Firebase fails
       localStorage.setItem("notes.folders.v1", JSON.stringify(data));
     }
   },
 
   async loadSettings() {
-    if (this.isElectron) {
+    if (this.useFirebase) {
+      return await firebaseService.loadSettings();
+    } else if (this.isElectron) {
       const settings = await window.electronAPI.readSettings();
       return settings || {};
     } else {
@@ -59,7 +79,9 @@ const Storage = {
   },
 
   async saveSettings(data) {
-    if (this.isElectron) {
+    if (this.useFirebase) {
+      await firebaseService.saveSettings(data);
+    } else if (this.isElectron) {
       await window.electronAPI.writeSettings(data);
     } else {
       if (data.theme) localStorage.setItem("notes.theme", data.theme);
@@ -72,7 +94,9 @@ const Storage = {
   },
 
   async loadTrash() {
-    if (this.isElectron) {
+    if (this.useFirebase) {
+      return await firebaseService.loadTrash();
+    } else if (this.isElectron) {
       return await window.electronAPI.readTrash();
     } else {
       return []; // trash not persisted in browser version
@@ -80,9 +104,27 @@ const Storage = {
   },
 
   async saveTrash(data) {
-    if (this.isElectron) {
+    if (this.useFirebase) {
+      await firebaseService.saveTrash(data);
+    } else if (this.isElectron) {
       await window.electronAPI.writeTrash(data);
     }
+  },
+
+  // New Firebase-specific methods for image handling
+  async uploadImage(file, noteId) {
+    if (this.useFirebase) {
+      return await firebaseService.uploadImage(file, noteId);
+    }
+    // Fallback to data URL for non-Firebase mode
+    return null;
+  },
+
+  async uploadImages(files, noteId) {
+    if (this.useFirebase) {
+      return await firebaseService.uploadImages(files, noteId);
+    }
+    return [];
   },
 };
 
@@ -1465,8 +1507,9 @@ const Storage = {
         const pinIndicator = document.createElement("span");
         pinIndicator.className = "pin-indicator";
         pinIndicator.innerHTML = `
-          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M12 17v5M8 17V3h8v14M5 17H3v2h18v-2h-2"></path>
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="12" y1="17" x2="12" y2="22"></line>
+            <path d="M5 17h14v-1.76a2 2 0 0 0-1.11-1.79l-1.78-.9A2 2 0 0 1 15 10.76V6h1a2 2 0 0 0 0-4H8a2 2 0 0 0 0 4h1v4.76a2 2 0 0 1-1.11 1.79l-1.78.9A2 2 0 0 0 5 15.24Z"></path>
           </svg>
         `;
         tab.appendChild(pinIndicator);
@@ -3695,7 +3738,7 @@ const Storage = {
     );
     await writable.close();
   }
-  el.autoBackupBtn.addEventListener("click", enableAutoBackup);
+  // Auto backup removed - now using Firebase backup in settings
 
   // About App button
   const aboutAppBtn = document.getElementById("aboutAppBtn");
@@ -4146,6 +4189,7 @@ const Storage = {
       leftTabs: state.left.tabs,
       rightTabs: state.right.tabs,
       splitMode: state.splitMode,
+      pinnedTabs: Array.from(state.pinnedTabs),
     };
     Storage.saveSettings(state.settings);
   }
@@ -4155,6 +4199,11 @@ const Storage = {
     if (state.settings.sessionState) {
       isRestoringSession = true;
       const session = state.settings.sessionState;
+
+      // Restore pinned tabs
+      if (session.pinnedTabs && Array.isArray(session.pinnedTabs)) {
+        state.pinnedTabs = new Set(session.pinnedTabs);
+      }
 
       // Restore left pane
       if (session.leftActive && getNote(session.leftActive)) {
