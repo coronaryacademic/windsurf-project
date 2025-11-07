@@ -891,6 +891,8 @@ textarea {
   border-radius: 6px;
   transform-origin: left center;
   transition: all 0.2s ease;
+  width: calc(100% - 36px) !important; /* Adjust width to account for margin */
+  box-sizing: border-box;
 }
 
 /* Style for note buttons in nested subfolders */
