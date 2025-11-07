@@ -2,8 +2,12 @@
 import { auth } from './firebase-config.js';
 import {
   signInWithPopup,
+  signInWithRedirect,
+  getRedirectResult,
   GoogleAuthProvider,
-  onAuthStateChanged
+  onAuthStateChanged,
+  browserLocalPersistence,
+  setPersistence
 } from 'https://www.gstatic.com/firebasejs/10.13.0/firebase-auth.js';
 
 // DOM Elements
@@ -35,28 +39,62 @@ function hideLoading() {
 // Google Sign In
 const googleProvider = new GoogleAuthProvider();
 
+// Check if we're on a mobile device or Safari
+const isMobile = /iPad|iPhone|iPod|Android/i.test(navigator.userAgent);
+const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
+
 async function signInWithGoogle() {
   hideError();
   showLoading();
 
   try {
-    const result = await signInWithPopup(auth, googleProvider);
-    console.log('Google sign-in successful:', result.user.email);
-    // Redirect will happen automatically via onAuthStateChanged
+    // Set persistence for better mobile support
+    await setPersistence(auth, browserLocalPersistence);
+    
+    // Use redirect for mobile and Safari, popup for others
+    if (isMobile || isSafari) {
+      await signInWithRedirect(auth, googleProvider);
+    } else {
+      const result = await signInWithPopup(auth, googleProvider);
+      console.log('Google sign-in successful:', result.user.email);
+    }
   } catch (error) {
     hideLoading();
     console.error('Google sign-in error:', error);
     
     let errorMsg = 'Failed to sign in with Google. Please try again.';
-    if (error.code === 'auth/popup-closed-by-user') {
-      errorMsg = 'Sign-in popup was closed. Please try again.';
-    } else if (error.code === 'auth/cancelled-popup-request') {
-      errorMsg = 'Sign-in was cancelled.';
+    if (error.code === 'auth/popup-closed-by-user' || error.code === 'auth/cancelled-popup-request') {
+      errorMsg = 'Sign-in was cancelled. Please try again.';
     } else if (error.code === 'auth/popup-blocked') {
-      errorMsg = 'Pop-up was blocked by your browser. Please allow pop-ups for this site.';
+      errorMsg = 'Pop-up was blocked. Please allow pop-ups or try the redirect method.';
+    } else if (error.code === 'auth/network-request-failed') {
+      errorMsg = 'Network error. Please check your connection and try again.';
     }
     
     showError(errorMsg);
+  }
+}
+
+// Handle redirect result when page loads
+async function handleRedirectResult() {
+  try {
+    const result = await getRedirectResult(auth);
+    if (result) {
+      console.log('Redirect sign-in successful:', result.user.email);
+    }
+  } catch (error) {
+    console.error('Redirect sign-in error:', error);
+    showError('Failed to complete sign in. Please try again.');
+  } finally {
+    hideLoading();
+  }
+}
+
+// Initialize auth state and handle redirects
+function initAuth() {
+  // Handle redirect result if this is a redirect back from Google
+  if (isMobile || isSafari) {
+    handleRedirectResult();
   }
 }
 
@@ -75,3 +113,6 @@ onAuthStateChanged(auth, (user) => {
     hideLoading();
   }
 });
+
+// Initialize authentication when the page loads
+window.addEventListener('DOMContentLoaded', initAuth);
