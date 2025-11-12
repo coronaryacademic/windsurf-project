@@ -1,101 +1,138 @@
-// Import Firebase Service
-import firebaseService from './firebase-service.js';
+// Import File System Service
+import fileSystemService from "./file-system-service.js";
 
-// Storage adapter: uses Firebase, Electron file system, or localStorage
+// Storage adapter: uses File System API, Electron file system, or localStorage
 const Storage = {
   isElectron: typeof window.electronAPI !== "undefined",
-  useFirebase: true, // Set to true to use Firebase
+  useFileSystem: true, // Set to true to use File System API
 
   async loadNotes() {
-    if (this.useFirebase) {
-      return await firebaseService.loadNotes();
+    if (this.useFileSystem) {
+      return await fileSystemService.loadNotes();
     } else if (this.isElectron) {
       return await window.electronAPI.readNotes();
     } else {
-      try {
-        const raw = localStorage.getItem("notes.offline.v1");
-        return raw ? JSON.parse(raw) : [];
-      } catch {
-        return [];
-      }
+      // NO BROWSER CACHE - Force file system only
+      console.warn("File system not available - no notes loaded");
+      return [];
     }
   },
 
   async saveNotes(data) {
-    if (this.useFirebase) {
-      await firebaseService.saveNotes(data);
+    if (this.useFileSystem) {
+      // Save each note individually for file system
+      for (const note of data) {
+        await fileSystemService.saveNote(note.id, note);
+      }
     } else if (this.isElectron) {
       await window.electronAPI.writeNotes(data);
     } else {
-      localStorage.setItem("notes.offline.v1", JSON.stringify(data));
+      // NO BROWSER CACHE - Force file system only
+      console.warn(
+        "File system not available - notes not saved to browser cache"
+      );
     }
   },
 
   async loadFolders() {
-    if (this.useFirebase) {
-      return await firebaseService.loadFolders();
+    if (this.useFileSystem) {
+      return await fileSystemService.loadFolders();
     } else if (this.isElectron) {
       return await window.electronAPI.readFolders();
     } else {
-      try {
-        const raw = localStorage.getItem("notes.folders.v1");
-        return raw ? JSON.parse(raw) : [];
-      } catch {
-        return [];
-      }
+      // NO BROWSER CACHE - Force file system only
+      console.warn("File system not available - no folders loaded");
+      return [];
     }
   },
 
   async saveFolders(data) {
     try {
-      if (this.useFirebase) {
-        await firebaseService.saveFolders(data);
+      if (this.useFileSystem) {
+        await fileSystemService.saveFolders(data);
       } else if (this.isElectron) {
         await window.electronAPI.writeFolders(data);
       } else {
-        localStorage.setItem("notes.folders.v1", JSON.stringify(data));
+        // NO BROWSER CACHE - Force file system only
+        console.warn(
+          "File system not available - folders not saved to browser cache"
+        );
       }
     } catch (error) {
-      console.error('Error saving folders:', error);
-      // Fallback to localStorage if Firebase fails
-      localStorage.setItem("notes.folders.v1", JSON.stringify(data));
+      console.error("Error saving folders:", error);
+      // NO FALLBACK TO BROWSER CACHE - File system only
+      throw error;
     }
   },
 
   async loadSettings() {
-    if (this.useFirebase) {
-      return await firebaseService.loadSettings();
+    if (this.useFileSystem) {
+      try {
+        const settings = await fileSystemService.loadSettings();
+        // Ensure we have default values
+        return {
+          theme: "dark",
+          foldersOpen: [],
+          autoSave: false,
+          autoSplitMode: true,
+          ...settings, // Override with loaded settings
+        };
+      } catch (error) {
+        console.warn(
+          "Failed to load settings from file system, using defaults:",
+          error
+        );
+        // Return defaults if file system fails
+        return {
+          theme: "dark",
+          foldersOpen: [],
+          autoSave: false,
+          autoSplitMode: true,
+        };
+      }
     } else if (this.isElectron) {
       const settings = await window.electronAPI.readSettings();
-      return settings || {};
-    } else {
-      const theme = localStorage.getItem("notes.theme") || "light";
-      const foldersOpen = localStorage.getItem("notes.foldersOpen.v1");
       return {
-        theme,
-        foldersOpen: foldersOpen ? JSON.parse(foldersOpen) : [],
+        theme: "dark",
+        foldersOpen: [],
+        autoSave: false,
+        autoSplitMode: true,
+        ...settings, // Override with loaded settings
+      };
+    } else {
+      // NO BROWSER CACHE - Force file system only
+      console.warn("File system not available - using default settings");
+      return {
+        theme: "dark",
+        foldersOpen: [],
+        autoSave: false,
+        autoSplitMode: true,
       };
     }
   },
 
   async saveSettings(data) {
-    if (this.useFirebase) {
-      await firebaseService.saveSettings(data);
+    if (this.useFileSystem) {
+      try {
+        await fileSystemService.saveSettings(data);
+        console.log("✅ Settings saved to file system:", data);
+      } catch (error) {
+        console.error("❌ Failed to save settings to file system:", error);
+        throw error;
+      }
     } else if (this.isElectron) {
       await window.electronAPI.writeSettings(data);
     } else {
-      if (data.theme) localStorage.setItem("notes.theme", data.theme);
-      if (data.foldersOpen)
-        localStorage.setItem(
-          "notes.foldersOpen.v1",
-          JSON.stringify(data.foldersOpen)
-        );
+      // NO BROWSER CACHE - Force file system only
+      console.warn(
+        "File system not available - settings not saved to browser cache"
+      );
     }
   },
 
   async loadTrash() {
-    if (this.useFirebase) {
-      return await firebaseService.loadTrash();
+    if (this.useFileSystem) {
+      return await fileSystemService.loadTrash();
     } else if (this.isElectron) {
       return await window.electronAPI.readTrash();
     } else {
@@ -104,52 +141,67 @@ const Storage = {
   },
 
   async saveTrash(data) {
-    if (this.useFirebase) {
-      await firebaseService.saveTrash(data);
+    if (this.useFileSystem) {
+      await fileSystemService.saveTrash(data);
     } else if (this.isElectron) {
       await window.electronAPI.writeTrash(data);
     }
   },
 
-  // Firebase deletion methods
-  async deleteNoteFromFirebase(noteId) {
-    if (this.useFirebase) {
-      await firebaseService.deleteNoteFromCollection(noteId);
+  // File system deletion methods
+  async deleteNoteFromFileSystem(noteId) {
+    if (this.useFileSystem) {
+      await fileSystemService.deleteNoteFromCollection(noteId);
     }
   },
 
-  async deleteFolderFromFirebase(folderId) {
-    if (this.useFirebase) {
-      await firebaseService.deleteFolderFromCollection(folderId);
+  async deleteFolderFromFileSystem(folderId) {
+    if (this.useFileSystem) {
+      await fileSystemService.deleteFolderFromCollection(folderId);
     }
   },
 
-  async deleteTrashItemFromFirebase(itemId) {
-    if (this.useFirebase) {
-      await firebaseService.deleteTrashItem(itemId);
+  async deleteTrashItemFromFileSystem(itemId) {
+    if (this.useFileSystem) {
+      await fileSystemService.deleteTrashItem(itemId);
     }
   },
 
-  async clearAllTrashFromFirebase() {
-    if (this.useFirebase) {
-      await firebaseService.clearAllTrash();
+  async clearAllTrashFromFileSystem() {
+    if (this.useFileSystem) {
+      await fileSystemService.clearAllTrash();
     }
   },
 
-  // New Firebase-specific methods for image handling
+  // Individual note save method for file system
+  async saveNote(noteId, noteData) {
+    if (this.useFileSystem) {
+      await fileSystemService.saveNote(noteId, noteData);
+    }
+  },
+
+  // Delete all notes method for file system
+  async deleteAllNotes() {
+    if (this.useFileSystem) {
+      await fileSystemService.deleteAllNotes();
+    }
+  },
+
+  // Image handling - for file system, we'll use data URLs
   async uploadImage(file, noteId) {
-    if (this.useFirebase) {
-      return await firebaseService.uploadImage(file, noteId);
-    }
-    // Fallback to data URL for non-Firebase mode
-    return null;
+    // For file system mode, convert to data URL
+    return new Promise((resolve) => {
+      const reader = new FileReader();
+      reader.onload = (e) => resolve(e.target.result);
+      reader.readAsDataURL(file);
+    });
   },
 
   async uploadImages(files, noteId) {
-    if (this.useFirebase) {
-      return await firebaseService.uploadImages(files, noteId);
-    }
-    return [];
+    const promises = Array.from(files).map((file) =>
+      this.uploadImage(file, noteId)
+    );
+    return await Promise.all(promises);
   },
 };
 
@@ -657,18 +709,23 @@ const Storage = {
                 deletedAt: new Date().toISOString(),
               };
               state.trash.push(deletedNote);
-              
-              // Sync with Firebase: Delete from notes collection, add to trash
+
+              // Sync with File System: Delete from notes collection, add to trash
               try {
-                await Storage.deleteNoteFromFirebase(id);
+                await Storage.deleteNoteFromFileSystem(id);
                 await Storage.saveTrash(state.trash);
               } catch (error) {
-                console.error('Firebase sync error:', error);
+                console.error("File system sync error:", error);
               }
             }
-            closeTab("left", id);
-            closeTab("right", id);
-            closeWindow(id);
+            // Close tabs and windows for this note (do this first)
+            try {
+              closeTab("left", id);
+              closeTab("right", id);
+              closeWindow(id);
+            } catch (error) {
+              console.warn("Error closing tabs for note:", id, error);
+            }
             saveNotes();
             renderSidebar();
           },
@@ -743,11 +800,15 @@ const Storage = {
           );
           if (!ok) return;
 
-          // Close tabs and windows for notes in folder
+          // Close tabs and windows for notes in folder (do this first)
           notesInFolder.forEach((note) => {
-            closeTab("left", note.id);
-            closeTab("right", note.id);
-            closeWindow(note.id);
+            try {
+              closeTab("left", note.id);
+              closeTab("right", note.id);
+              closeWindow(note.id);
+            } catch (error) {
+              console.warn("Error closing tabs for note:", note.id, error);
+            }
           });
 
           // Remove notes from state
@@ -761,26 +822,25 @@ const Storage = {
               ...deletedFolder,
               type: "folder",
               notes: notesInFolder, // Keep notes nested in folder
-              subfolders: subfolders, // Keep subfolders nested
               deletedAt: new Date().toISOString(),
             };
             state.trash.push(trashItem);
-            
-            // Sync with Firebase: Delete folder and notes from collections, add to trash
+
+            // Sync with File System: Delete folder and notes from collections, add to trash
             try {
-              await Storage.deleteFolderFromFirebase(fid);
-              // Delete all notes in the folder from Firebase
+              await Storage.deleteFolderFromFileSystem(fid);
+              // Delete all notes in the folder from File System
               for (const note of notesInFolder) {
-                await Storage.deleteNoteFromFirebase(note.id);
+                await Storage.deleteNoteFromFileSystem(note.id);
               }
               await Storage.saveTrash(state.trash);
             } catch (error) {
-              console.error('Firebase sync error:', error);
+              console.error("File system sync error:", error);
             }
           }
 
-          // Move subfolders to root
-          state.folders.forEach((f) => {
+          // Move subfolders to root level
+          subfolders.forEach((f) => {
             if (f.parentId === fid) f.parentId = null;
           });
 
@@ -909,14 +969,16 @@ const Storage = {
   function updateTrashButton() {
     if (el.trashBtn) {
       // Find or create the text span to preserve the SVG icon
-      let textSpan = el.trashBtn.querySelector('.trash-text');
+      let textSpan = el.trashBtn.querySelector(".trash-text");
       if (!textSpan) {
         // Create a span for the text and move existing text into it
-        textSpan = document.createElement('span');
-        textSpan.className = 'trash-text';
+        textSpan = document.createElement("span");
+        textSpan.className = "trash-text";
         // Move any existing text nodes to the span
-        const textNodes = Array.from(el.trashBtn.childNodes).filter(node => node.nodeType === 3);
-        textNodes.forEach(node => {
+        const textNodes = Array.from(el.trashBtn.childNodes).filter(
+          (node) => node.nodeType === 3
+        );
+        textNodes.forEach((node) => {
           if (node.textContent.trim()) {
             textSpan.textContent = node.textContent.trim();
             node.remove();
@@ -1142,14 +1204,15 @@ const Storage = {
   function getActive(side) {
     return state[side].active ? getNote(state[side].active) : null;
   }
-  function getFolderName(fid) {
-    const f = state.folders.find((f) => f.id === fid);
-    return f ? f.name : "";
-  }
 
   // Sidebar
   function renderSidebar() {
     el.noteList.innerHTML = "";
+
+    // Update note count in settings
+    if (typeof window.updateNoteCount === "function") {
+      window.updateNoteCount();
+    }
 
     // Filter notes and folders based on search query
     const query = state.searchQuery.toLowerCase().trim();
@@ -1488,6 +1551,24 @@ const Storage = {
         </div>
         <div class="sidebar-empty-text">No results found</div>
         <div class="sidebar-empty-hint">Press <kbd>Enter</kbd> to show detailed results</div>
+      `;
+      el.noteList.appendChild(emptyMsg);
+    }
+    // Show empty state message if no notes or folders exist at all
+    else if (!query && state.notes.length === 0 && state.folders.length === 0) {
+      const emptyMsg = document.createElement("div");
+      emptyMsg.className = "sidebar-empty-state";
+      emptyMsg.innerHTML = `
+        <div class="sidebar-empty-icon">
+          <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+            <polyline points="14 2 14 8 20 8"></polyline>
+            <line x1="12" y1="18" x2="12" y2="12"></line>
+            <line x1="9" y1="15" x2="15" y2="15"></line>
+          </svg>
+        </div>
+        <div class="sidebar-empty-text">No notes yet</div>
+        <div class="sidebar-empty-hint">Click <strong>+ New Note</strong> to get started</div>
       `;
       el.noteList.appendChild(emptyMsg);
     }
@@ -2318,7 +2399,7 @@ const Storage = {
       // Don't auto-highlight if note is locked
       if (!state.autoHighlight) return;
       if (content.getAttribute("contenteditable") === "false") return;
-      
+
       applyHighlightToSelection(state.currentHighlightColor);
       note.contentHtml = content.innerHTML;
       saveHistoryIfChanged();
@@ -3111,14 +3192,14 @@ const Storage = {
         );
         if (ok) {
           state.trash = [];
-          
-          // Sync with Firebase: Clear all trash
+
+          // Sync with File System: Clear all trash
           try {
-            await Storage.clearAllTrashFromFirebase();
+            await Storage.clearAllTrashFromFileSystem();
           } catch (error) {
-            console.error('Firebase sync error:', error);
+            console.error("File system sync error:", error);
           }
-          
+
           closeModal();
           renderSidebar();
         }
@@ -3265,32 +3346,32 @@ const Storage = {
                   state.folders.push(subfolder);
                 });
               }
-              
-              // Sync with Firebase: Add back to collections, remove from trash
+
+              // Sync with File System: Add back to collections, remove from trash
               try {
                 await Storage.saveFolders([restored, ...(subfolders || [])]);
                 if (notes && notes.length > 0) {
                   await Storage.saveNotes(notes);
                 }
-                await Storage.deleteTrashItemFromFirebase(id);
+                await Storage.deleteTrashItemFromFileSystem(id);
               } catch (error) {
-                console.error('Firebase sync error:', error);
+                console.error("File system sync error:", error);
               }
-              
+
               saveFolders();
               saveNotes();
             } else {
               // Restore note
               state.notes.push(restored);
-              
-              // Sync with Firebase: Add back to notes, remove from trash
+
+              // Sync with File System: Add back to notes, remove from trash
               try {
                 await Storage.saveNotes([restored]);
-                await Storage.deleteTrashItemFromFirebase(id);
+                await Storage.deleteTrashItemFromFileSystem(id);
               } catch (error) {
-                console.error('Firebase sync error:', error);
+                console.error("File system sync error:", error);
               }
-              
+
               saveNotes();
             }
 
@@ -3327,14 +3408,14 @@ const Storage = {
 
             // Restore the note
             state.notes.push(note);
-            
-            // Sync with Firebase: Add note back to notes collection
+
+            // Sync with File System: Add note back to notes collection
             try {
               await Storage.saveNotes([note]);
             } catch (error) {
-              console.error('Firebase sync error:', error);
+              console.error("File system sync error:", error);
             }
-            
+
             saveNotes();
 
             // Remove note from folder's notes array
@@ -3345,11 +3426,11 @@ const Storage = {
               delete folder.notes;
             }
 
-            // Update trash in Firebase
+            // Update trash in File System
             try {
               await Storage.saveTrash(state.trash);
             } catch (error) {
-              console.error('Firebase sync error:', error);
+              console.error("File system sync error:", error);
             }
             closeModal();
             renderSidebar();
@@ -3367,14 +3448,14 @@ const Storage = {
           );
           if (ok) {
             state.trash = state.trash.filter((t) => t.id !== id);
-            
-            // Sync with Firebase: Delete from trash collection
+
+            // Sync with File System: Delete from trash collection
             try {
-              await Storage.deleteTrashItemFromFirebase(id);
+              await Storage.deleteTrashItemFromFileSystem(id);
             } catch (error) {
-              console.error('Firebase sync error:', error);
+              console.error("File system sync error:", error);
             }
-            
+
             // Update the modal count and remove item
             modal.querySelector(
               "h2"
@@ -3575,7 +3656,10 @@ const Storage = {
   });
   document.addEventListener("click", (e) => {
     // Don't close menus if clicking inside them
-    if ((el.toolsMenu && el.toolsMenu.contains(e.target)) || el.settingsMenu.contains(e.target)) {
+    if (
+      (el.toolsMenu && el.toolsMenu.contains(e.target)) ||
+      el.settingsMenu.contains(e.target)
+    ) {
       return;
     }
     closeMenus();
@@ -3690,8 +3774,31 @@ const Storage = {
     if (!file) return;
     try {
       const text = await file.text();
-      const arr = JSON.parse(text);
-      if (!Array.isArray(arr)) throw new Error("Invalid file");
+      let arr;
+
+      try {
+        const parsed = JSON.parse(text);
+
+        // Handle different JSON formats
+        if (Array.isArray(parsed)) {
+          arr = parsed;
+        } else if (parsed.notes && Array.isArray(parsed.notes)) {
+          // Handle backup format with notes property
+          arr = parsed.notes;
+        } else if (parsed.data && Array.isArray(parsed.data)) {
+          // Handle export format with data property
+          arr = parsed.data;
+        } else {
+          // Single note object
+          arr = [parsed];
+        }
+      } catch (parseError) {
+        throw new Error("Invalid JSON file format");
+      }
+
+      if (!Array.isArray(arr) || arr.length === 0) {
+        throw new Error("No valid notes found in file");
+      }
 
       // Create or find "Imported" folder
       const timestamp = new Date().toLocaleString("en-US", {
@@ -3785,15 +3892,28 @@ const Storage = {
     });
   });
   el.clearAllBtn.addEventListener("click", async () => {
-    const ok = await modalConfirm("Clear ALL notes? This cannot be undone.");
+    const ok = await modalConfirm("Delete ALL notes? This cannot be undone.");
     if (!ok) return;
-    state.notes = [];
-    state.left = { tabs: [], active: null };
-    state.right = { tabs: [], active: null };
-    Object.keys(state.windows).forEach(closeWindow);
-    saveNotes();
-    renderSidebar();
-    ["left", "right"].forEach(renderPane);
+
+    try {
+      // Delete all notes from file system
+      await Storage.deleteAllNotes();
+
+      // Clear local state
+      state.notes = [];
+      state.left = { tabs: [], active: null };
+      state.right = { tabs: [], active: null };
+      Object.keys(state.windows).forEach(closeWindow);
+
+      renderSidebar();
+      ["left", "right"].forEach(renderPane);
+
+      // Show success message
+      modalAlert("All notes have been deleted successfully.");
+    } catch (error) {
+      console.error("Error deleting all notes:", error);
+      modalAlert("Failed to delete all notes. Please try again.");
+    }
   });
 
   // Auto Backup using File System Access API
@@ -3829,7 +3949,7 @@ const Storage = {
     );
     await writable.close();
   }
-  // Auto backup removed - now using Firebase backup in settings
+  // Auto backup removed - now using File System backup in settings
 
   // About App button
   const aboutAppBtn = document.getElementById("aboutAppBtn");
@@ -3876,16 +3996,16 @@ const Storage = {
         </div>
       </div>
     `;
-    
+
     document.body.appendChild(modal);
-    
+
     // Close handlers
     const closeBtn = modal.querySelector(".modal-x");
     const closeActionBtn = modal.querySelector(".modal-close");
     const overlay = modal;
-    
+
     const closeModal = () => modal.remove();
-    
+
     closeBtn.addEventListener("click", closeModal);
     closeActionBtn.addEventListener("click", closeModal);
     overlay.addEventListener("click", (e) => {
@@ -4082,19 +4202,19 @@ const Storage = {
     if (bPT) {
       // Update button text and icon based on pin state
       const isPinned = handlers.tabId && state.pinnedTabs.has(handlers.tabId);
-      
+
       // Clear button content first
-      bPT.innerHTML = '';
-      
+      bPT.innerHTML = "";
+
       // Create SVG
-      const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-      svg.setAttribute('width', '14');
-      svg.setAttribute('height', '14');
-      svg.setAttribute('viewBox', '0 0 24 24');
-      svg.setAttribute('fill', 'none');
-      svg.setAttribute('stroke', 'currentColor');
-      svg.setAttribute('stroke-width', '2');
-      
+      const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+      svg.setAttribute("width", "14");
+      svg.setAttribute("height", "14");
+      svg.setAttribute("viewBox", "0 0 24 24");
+      svg.setAttribute("fill", "none");
+      svg.setAttribute("stroke", "currentColor");
+      svg.setAttribute("stroke-width", "2");
+
       if (isPinned) {
         // Unpin icon (pin with slash)
         svg.innerHTML = `
@@ -4109,11 +4229,13 @@ const Storage = {
           <path d="M9 10.76a2 2 0 0 1-1.11 1.79l-1.78.9A2 2 0 0 0 5 15.24V16a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-.76a2 2 0 0 0-1.11-1.79l-1.78-.9A2 2 0 0 1 15 10.76V7a1 1 0 0 1 1-1 2 2 0 0 0 0-4H8a2 2 0 0 0 0 4 1 1 0 0 1 1 1z"></path>
         `;
       }
-      
+
       // Add SVG and text
       bPT.appendChild(svg);
-      bPT.appendChild(document.createTextNode(isPinned ? 'Unpin Tab' : 'Pin Tab'));
-      
+      bPT.appendChild(
+        document.createTextNode(isPinned ? "Unpin Tab" : "Pin Tab")
+      );
+
       bPT.addEventListener("click", async () => {
         await handlers.onPinTab?.();
         hideContextMenu();
@@ -4142,7 +4264,7 @@ const Storage = {
         e.stopPropagation();
         return;
       }
-      
+
       // Create a text node with the same content
       const text = document.createTextNode(target.textContent);
       // Replace the highlight span with just the text
@@ -4172,12 +4294,18 @@ const Storage = {
 
     const range = sel.getRangeAt(0);
     if (range.collapsed) return;
-    
+
     // Don't allow highlighting if note is locked
-    const editableContent = range.commonAncestorContainer.nodeType === 3 
-      ? range.commonAncestorContainer.parentElement.closest('.content.editable')
-      : range.commonAncestorContainer.closest('.content.editable');
-    if (editableContent && editableContent.getAttribute("contenteditable") === "false") {
+    const editableContent =
+      range.commonAncestorContainer.nodeType === 3
+        ? range.commonAncestorContainer.parentElement.closest(
+            ".content.editable"
+          )
+        : range.commonAncestorContainer.closest(".content.editable");
+    if (
+      editableContent &&
+      editableContent.getAttribute("contenteditable") === "false"
+    ) {
       return;
     }
 
@@ -4340,7 +4468,7 @@ const Storage = {
 
   // Show data directory in Electron
   if (Storage.isElectron) {
-    const dataDir = await window.electronAPI.getDataDir();
+    console.log("Data directory: D:\\MyNotes");
   }
   function updateEmptyState() {
     const anyPane = !!(state.left.active || state.right.active);
@@ -4630,16 +4758,18 @@ const Storage = {
       }
     });
 
-    // Store folder data before deletion for Firebase sync
+    // Store folder data before deletion for File System sync
     const foldersToDelete = [];
-    
+
     // Delete selected folders
     selectedFolders.forEach((folderId) => {
       const folder = state.folders.find((f) => f.id === folderId);
       if (folder) {
         // Get notes in this folder BEFORE removing them
-        const notesInFolder = state.notes.filter((n) => n.folderId === folderId);
-        
+        const notesInFolder = state.notes.filter(
+          (n) => n.folderId === folderId
+        );
+
         // Move notes in this folder to trash
         notesInFolder.forEach((note) => {
           state.trash.push({ ...note, deletedAt: new Date().toISOString() });
@@ -4660,10 +4790,10 @@ const Storage = {
         };
         const subfolders = getSubfolders(folderId);
 
-        // Store for Firebase deletion
+        // Store for File System deletion
         foldersToDelete.push({
           folderId: folderId,
-          notesInFolder: notesInFolder
+          notesInFolder: notesInFolder,
         });
 
         // Add folder to trash with nested notes and subfolders
@@ -4690,26 +4820,26 @@ const Storage = {
       }
     });
 
-    // Sync with Firebase: Delete from collections, add to trash
+    // Sync with File System: Delete from collections, add to trash
     try {
-      // Delete notes from Firebase
+      // Delete notes from File System
       for (const noteId of selectedNotes) {
-        await Storage.deleteNoteFromFirebase(noteId);
+        await Storage.deleteNoteFromFileSystem(noteId);
       }
-      
-      // Delete folders and their notes from Firebase
+
+      // Delete folders and their notes from File System
       for (const folderData of foldersToDelete) {
-        await Storage.deleteFolderFromFirebase(folderData.folderId);
+        await Storage.deleteFolderFromFileSystem(folderData.folderId);
         // Delete all notes in the folder
         for (const note of folderData.notesInFolder) {
-          await Storage.deleteNoteFromFirebase(note.id);
+          await Storage.deleteNoteFromFileSystem(note.id);
         }
       }
-      
-      // Save trash to Firebase
+
+      // Save trash to File System
       await Storage.saveTrash(state.trash);
     } catch (error) {
-      console.error('Firebase sync error:', error);
+      console.error("File system sync error:", error);
     }
 
     // Clear selection
@@ -5412,8 +5542,9 @@ const Storage = {
           "Auto Highlight: " + (state.autoHighlight ? "ON" : "OFF");
       }
       // Update all editor menu labels
-      document.querySelectorAll('.auto-hl-label').forEach(label => {
-        label.textContent = "Auto Highlight: " + (state.autoHighlight ? "ON" : "OFF");
+      document.querySelectorAll(".auto-hl-label").forEach((label) => {
+        label.textContent =
+          "Auto Highlight: " + (state.autoHighlight ? "ON" : "OFF");
       });
     }
 
@@ -5728,10 +5859,10 @@ const Storage = {
     const stickyNotesTextarea = document.getElementById("stickyNotesTextarea");
     const stickyNotesStatus = document.getElementById("stickyNotesStatus");
     const clearStickyNotes = document.getElementById("clearStickyNotes");
-    
+
     let saveTimeout = null;
     const STORAGE_KEY = "devStickyNotes";
-    
+
     // Load sticky notes from storage
     function loadStickyNotes() {
       if (Storage.isElectron) {
@@ -5744,55 +5875,57 @@ const Storage = {
         stickyNotesTextarea.value = notes;
       }
     }
-    
+
     // Save sticky notes to storage
     async function saveStickyNotes() {
       const notes = stickyNotesTextarea.value;
-      
+
       if (Storage.isElectron) {
         state.settings.stickyNotes = notes;
         await window.electronAPI.writeSettings(state.settings);
       } else {
         localStorage.setItem(STORAGE_KEY, notes);
       }
-      
+
       // Update status
       stickyNotesStatus.textContent = "Auto-saved";
       setTimeout(() => {
         stickyNotesStatus.textContent = "Auto-saved";
       }, 2000);
     }
-    
+
     // Auto-save on input with debounce
     stickyNotesTextarea.addEventListener("input", () => {
       stickyNotesStatus.textContent = "Saving...";
-      
+
       // Clear existing timeout
       if (saveTimeout) {
         clearTimeout(saveTimeout);
       }
-      
+
       // Set new timeout to save after 1 second of no typing
       saveTimeout = setTimeout(() => {
         saveStickyNotes();
       }, 1000);
     });
-    
+
     // Clear button
     clearStickyNotes.addEventListener("click", async () => {
       if (stickyNotesTextarea.value.trim() === "") {
         return;
       }
-      
+
       // Confirm before clearing using custom modal
-      const confirmClear = await modalConfirm("Are you sure you want to clear all notes? This action cannot be undone.");
+      const confirmClear = await modalConfirm(
+        "Are you sure you want to clear all notes? This action cannot be undone."
+      );
       if (confirmClear) {
         AudioFX.playDelete();
         stickyNotesTextarea.value = "";
         saveStickyNotes();
       }
     });
-    
+
     // Load on startup
     loadStickyNotes();
   }

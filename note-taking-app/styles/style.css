@@ -1079,7 +1079,7 @@ textarea {
   max-height: 70vh;
   overflow-y: auto;
   scrollbar-width: thin;
-  scrollbar-color: var(--muted) transparent;
+  scrollbar-color: var(--muted) transparent !important;
   overscroll-behavior: contain;
 }
 
@@ -1095,7 +1095,7 @@ textarea {
 }
 
 .menu-list::-webkit-scrollbar-thumb {
-  background-color: var(--muted);
+  background-color: rgba(156, 163, 175, 0.3);
   border-radius: 3px;
 }
 
@@ -1948,12 +1948,12 @@ textarea {
   width: 100%;
   height: calc(100% - 40px);
   padding: 20px;
+  overflow-x: auto;
+  overflow-y: auto;
   padding-bottom: 20px;
   border: none;
   border-radius: 0;
   color: var(--text);
-  overflow-y: auto;
-  overflow-x: hidden;
   min-height: 0;
   user-select: text;
   -webkit-user-select: text;

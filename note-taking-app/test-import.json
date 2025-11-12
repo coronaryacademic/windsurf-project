@@ -1,0 +1,16 @@
+[
+  {
+    "title": "Test Note 1",
+    "contentHtml": "<p>This is a test note for import testing.</p>",
+    "tags": ["test", "import"],
+    "createdAt": "2024-11-12T18:00:00.000Z",
+    "updatedAt": "2024-11-12T18:00:00.000Z"
+  },
+  {
+    "title": "Test Note 2", 
+    "contentHtml": "<p>Another test note with <strong>bold text</strong>.</p>",
+    "tags": ["test"],
+    "createdAt": "2024-11-12T18:01:00.000Z",
+    "updatedAt": "2024-11-12T18:01:00.000Z"
+  }
+]

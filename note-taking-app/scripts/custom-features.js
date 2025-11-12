@@ -106,12 +106,10 @@ document.addEventListener("DOMContentLoaded", () => {
     isElectronApp = true;
     console.log("✓ Running in Electron - using backend file system");
 
-    // Get data directory
-    window.electronAPI.getDataDir().then((dir) => {
-      dataDirectory = dir;
-      console.log("✓ Data directory:", dataDirectory);
-      updateFileNameDisplay("Save location: " + dataDirectory);
-    });
+    // Set data directory for display
+    dataDirectory = "D:\\MyNotes";
+    console.log("✓ Data directory:", dataDirectory);
+    updateFileNameDisplay("Save location: " + dataDirectory);
 
     // Auto-save disabled - only manual Ctrl+S saves
     console.log("ℹ Auto-save disabled - use Ctrl+S to save");
@@ -1258,7 +1256,7 @@ function setupBrowserDragToSplit() {
 }
 
 // Initialize theme carousel with arrow navigation
-function initializeThemeCarousel() {
+async function initializeThemeCarousel() {
   const themeCarousel = document.querySelector(".theme-carousel");
   if (!themeCarousel) return;
 
@@ -1268,8 +1266,17 @@ function initializeThemeCarousel() {
 
   if (!prevBtn || !nextBtn || !themeNameEl) return;
 
-  // Get saved theme index
-  const savedTheme = localStorage.getItem("notes.theme") || "dark";
+  // Get saved theme index from file system
+  let savedTheme = "dark";
+  if (window.fileSystemService) {
+    try {
+      const response = await window.fileSystemService.makeRequest('/settings');
+      const settings = response || {};
+      savedTheme = settings.theme || "dark";
+    } catch (error) {
+      savedTheme = "dark";
+    }
+  }
   currentThemeIndex = themes.indexOf(savedTheme);
   if (currentThemeIndex === -1) currentThemeIndex = 0;
 
@@ -1293,7 +1300,7 @@ function initializeThemeCarousel() {
       themeName.charAt(0).toUpperCase() + themeName.slice(1);
   }
 
-  function applyCurrentTheme() {
+  async function applyCurrentTheme() {
     const themeName = themes[currentThemeIndex];
 
     // Remove all theme classes
@@ -1318,24 +1325,41 @@ function initializeThemeCarousel() {
       document.body.classList.add(`theme-${themeName}`);
     }
 
-    // Save theme
-    localStorage.setItem("notes.theme", themeName);
+    // Save theme to file system if available
+    if (window.fileSystemService && window.state && window.state.settings) {
+      try {
+        window.state.settings.theme = themeName;
+        await window.fileSystemService.saveSettings(window.state.settings);
+        console.log("✓ Theme saved to file system:", themeName);
+      } catch (error) {
+        console.warn("Failed to save theme to file system:", error);
+      }
+    }
     console.log("✓ Theme applied:", themeName);
   }
 }
 
 // Load saved theme on startup
-function loadSavedTheme() {
-  const savedTheme = localStorage.getItem("notes.theme") || "dark";
+async function loadSavedTheme() {
+  let savedTheme = "dark";
+  
+  // Try to get theme from file system service if available
+  if (window.fileSystemService) {
+    try {
+      const response = await window.fileSystemService.makeRequest('/settings');
+      const settings = response || {};
+      savedTheme = settings.theme || "dark";
+    } catch (error) {
+      console.log("Using default theme (dark) - file system not available");
+      savedTheme = "dark";
+    }
+  }
+  
   currentThemeIndex = themes.indexOf(savedTheme);
   if (currentThemeIndex === -1) currentThemeIndex = 0;
 
-  // Apply theme
-  const themeName = themes[currentThemeIndex];
-  if (themeName !== "dark") {
-    document.body.classList.add(`theme-${themeName}`);
-  }
-  console.log("✓ Theme loaded:", themeName);
+  // Don't apply theme here - let the main app handle it
+  console.log("✓ Theme detected:", savedTheme);
 }
 
 // Update font sizes for all editors
