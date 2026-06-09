@@ -340,3 +340,265 @@ input:checked+.slider:before {
   opacity: 0.9;
 }
 
+/* Update Patch / Changelog Styles */
+.changelog-timeline {
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+  margin-top: 1.5rem;
+}
+
+.changelog-item {
+  position: relative;
+  padding-left: 28px;
+  border-left: 2px solid var(--settingsborder);
+}
+
+.changelog-item::before {
+  content: '';
+  position: absolute;
+  left: -6px;
+  top: 6px;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background-color: var(--accent);
+  border: 2px solid var(--bg-primary);
+  transition: background-color 0.2s;
+}
+
+.changelog-item:hover::before {
+  background-color: var(--text-primary, var(--defualt));
+}
+
+.changelog-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.changelog-version {
+  font-size: 1.15rem;
+  font-weight: 600;
+  color: var(--defualt);
+  margin: 0;
+}
+
+.changelog-date {
+  font-size: 0.85rem;
+  color: var(--boot);
+}
+
+.changelog-badge {
+  padding: 2px 8px;
+  font-size: 0.7rem;
+  font-weight: 600;
+  border-radius: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.changelog-badge.latest {
+  background-color: var(--accent-bg);
+  color: var(--accent);
+  border: 1px solid var(--accent);
+}
+
+.changelog-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.changelog-list li {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  font-size: 0.9rem;
+  line-height: 1.5;
+  color: var(--defualt);
+}
+
+.changelog-tag {
+  display: inline-block;
+  padding: 2px 8px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  border-radius: 4px;
+  text-transform: uppercase;
+  margin-top: 1px;
+  flex-shrink: 0;
+  letter-spacing: 0.5px;
+  min-width: 65px;
+  text-align: center;
+}
+
+.changelog-tag.added {
+  background-color: rgba(16, 185, 129, 0.12);
+  color: #10b981;
+}
+
+.changelog-tag.fixed {
+  background-color: rgba(239, 68, 68, 0.12);
+  color: #ef4444;
+}
+
+.changelog-tag.improved {
+  background-color: rgba(59, 130, 246, 0.12);
+  color: #3b82f6;
+}
+
+.changelog-tag.reworked {
+  background-color: rgba(139, 92, 246, 0.12);
+  color: #8b5cf6;
+}
+
+/* Interactive Vertical Timeline Layout */
+.changelog-container {
+  display: flex;
+  gap: 3.5rem;
+  margin-top: 1.5rem;
+  min-height: 280px;
+  position: relative;
+}
+
+/* Timeline Axis (Left Side Track) */
+.timeline-axis-wrapper {
+  position: relative;
+  width: 80px;
+  height: 220px;
+  margin-top: 10px;
+  margin-bottom: 10px;
+  user-select: none;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.timeline-axis-line {
+  position: absolute;
+  left: 20px;
+  top: 0;
+  bottom: 0;
+  width: 4px;
+  background-color: var(--settingsborder);
+  border-radius: 2px;
+}
+
+.timeline-axis-ball {
+  position: absolute;
+  left: 12px;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background-color: var(--accent);
+  border: 3px solid var(--bg-secondary);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+  cursor: grab;
+  z-index: 10;
+  transform: translateY(-50%);
+  transition: top 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275), background-color 0.2s, transform 0.2s;
+}
+
+.timeline-axis-ball:active {
+  cursor: grabbing;
+  transform: translateY(-50%) scale(1.15);
+  background-color: var(--text-primary, var(--defualt));
+}
+
+.timeline-axis-steps {
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  right: 0;
+  pointer-events: none;
+}
+
+.timeline-step {
+  position: absolute;
+  left: 20px;
+  display: flex;
+  align-items: center;
+  transform: translateY(-50%);
+  cursor: pointer;
+  pointer-events: auto;
+}
+
+.timeline-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background-color: var(--settingsborder);
+  border: 2px solid var(--bg-primary);
+  margin-left: -2px; /* Center with 4px track */
+  z-index: 5;
+  transition: all 0.2s;
+}
+
+.timeline-label {
+  margin-left: 16px;
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: var(--boot);
+  transition: all 0.2s;
+}
+
+.timeline-step.active .timeline-dot {
+  background-color: var(--accent);
+  transform: scale(1.3);
+}
+
+.timeline-step.active .timeline-label {
+  color: var(--defualt);
+  font-weight: 700;
+}
+
+.timeline-step:hover .timeline-dot {
+  background-color: var(--accent);
+}
+
+.timeline-step:hover .timeline-label {
+  color: var(--defualt);
+}
+
+/* Right Side Content Panel */
+.changelog-content-area {
+  flex: 1;
+  background-color: var(--bg-primary);
+  border: 1px solid var(--settingsborder);
+  border-radius: 12px;
+  padding: 1.5rem;
+  animation: fadeIn 0.3s ease-out;
+  min-height: 220px;
+}
+
+#changelog-details-panel {
+  animation: fadeIn 0.2s ease-out;
+}
+
+/* Settings Input and Form Elements */
+.settings-input {
+  background-color: var(--bg-primary);
+  border: 1px solid var(--settingsborder);
+  color: var(--defualt);
+  border-radius: 6px;
+  padding: 8px 12px;
+  font-size: 0.9rem;
+  transition: border-color 0.2s, box-shadow 0.2s;
+  outline: none;
+}
+
+.settings-input:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px var(--accent-bg);
+}
+
+
+
+
+

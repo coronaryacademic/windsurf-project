@@ -1,6 +1,7 @@
 import fileSystemService from "./file-system-service.js";
 import { medicalIcons, getIcon } from "./medical-icons.js";
 import { BlockEditor } from "./editor-core.js";
+import changelogData from "./changelog-data.js";
 
 // Global exposure for non-module scripts
 // Set it immediately to the default, then update after probe
@@ -5161,6 +5162,18 @@ window.startImportProcess = function () {
     const workspaceContent = document.getElementById("workspaceContent");
     if (!workspaceContent) return;
 
+    const changelogKeys = Object.keys(changelogData);
+    let changelogStepsHtml = "";
+    changelogKeys.forEach((key, index) => {
+      const topPercent = changelogKeys.length > 1 ? (index / (changelogKeys.length - 1)) * 100 : 0;
+      changelogStepsHtml += `
+        <div class="timeline-step ${index === 0 ? "active" : ""}" data-version="${key}" style="top: ${topPercent}%">
+          <span class="timeline-dot"></span>
+          <span class="timeline-label">${key}</span>
+        </div>
+      `;
+    });
+
     // Hide breadcrumb actions
     const breadcrumbActions = document.querySelector(".breadcrumb-actions");
     if (breadcrumbActions) {
@@ -5204,6 +5217,13 @@ window.startImportProcess = function () {
               <button class="settings-nav-btn" data-section="data">
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
                 Data Management
+              </button>
+              <button class="settings-nav-btn" data-section="update-patch" style="display: flex; align-items: center; justify-content: space-between; width: 100%;">
+                <span style="display: flex; align-items: center; gap: 12px;">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="4"></circle><line x1="1.05" y1="12" x2="8" y2="12"></line><line x1="16" y1="12" x2="22.95" y2="12"></line></svg>
+                  Update patch
+                </span>
+                <span style="background: var(--accent); color: white; font-size: 10px; font-weight: bold; padding: 2px 6px; border-radius: 10px; margin-left: auto; text-transform: uppercase; letter-spacing: 0.5px;">NEW</span>
               </button>
               <button class="settings-nav-btn" data-section="about">
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 2 7 12 12 22 7 12 2"></polygon><polyline points="2 17 12 22 22 17"></polyline><polyline points="2 12 12 17 22 12"></polyline></svg>
@@ -5340,6 +5360,41 @@ window.startImportProcess = function () {
                 </div>
               </div>
 
+               <!-- UPDATE PATCH SECTION -->
+              <div id="settings-update-patch" class="settings-section">
+                <h2>Update Patch</h2>
+                <div class="setting-group" style="padding: 1.5rem 2rem;">
+                  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; flex-wrap: wrap; gap: 12px;">
+                    <div>
+                      <h3 style="margin: 0;">Release Notes</h3>
+                      <p style="margin: 4px 0 0 0; color: var(--boot); font-size: 0.9rem;">Drag the vertical timeline scroll bar on the left to navigate older versions.</p>
+                    </div>
+                    <button class="settings-btn" id="addNewVersionBtn" style="padding: 6px 14px; font-size: 0.85rem; display: flex; align-items: center; gap: 6px;">
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                      Add version
+                    </button>
+                  </div>
+                  
+                  <div class="changelog-container">
+                    <!-- Left Side: Interactive Timeline Axis -->
+                    <div class="timeline-axis-wrapper" id="changelogAxisWrapper">
+                      <div class="timeline-axis-line"></div>
+                      <div class="timeline-axis-ball" id="timelineBall"></div>
+                      <div class="timeline-axis-steps">
+                        ${changelogStepsHtml}
+                      </div>
+                    </div>
+
+                    <!-- Right Side: Content Area -->
+                    <div class="changelog-content-area">
+                      <div id="changelog-details-panel">
+                        <!-- Loaded dynamically via JS -->
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
                <!-- ABOUT SECTION -->
               <div id="settings-about" class="settings-section">
                 <h2>About</h2>
@@ -5371,6 +5426,403 @@ window.startImportProcess = function () {
     );
     el.settingsSections = document.querySelectorAll(".settings-section");
     el.themeCards = document.querySelectorAll(".theme-card");
+
+    // Initialize Changelog Scroll / Slider
+    const initChangelogSlider = () => {
+      let activeChangelogData = state.settings.changelogData || changelogData;
+
+      const detailsPanel = document.getElementById("changelog-details-panel");
+      const wrapper = document.getElementById("changelogAxisWrapper");
+      const ball = document.getElementById("timelineBall");
+
+      // Render timeline axis steps dynamically
+      const renderTimelineAxis = () => {
+        if (!wrapper) return;
+        const stepsContainer = wrapper.querySelector(".timeline-axis-steps");
+        if (!stepsContainer) return;
+
+        const keys = Object.keys(activeChangelogData);
+        let stepsHtml = "";
+        keys.forEach((key, index) => {
+          const topPercent = keys.length > 1 ? (index / (keys.length - 1)) * 100 : 0;
+          stepsHtml += `
+            <div class="timeline-step" data-version="${key}" style="top: ${topPercent}%">
+              <span class="timeline-dot"></span>
+              <span class="timeline-label">${key}</span>
+            </div>
+          `;
+        });
+        stepsContainer.innerHTML = stepsHtml;
+
+        // Bind click events to the dynamically rendered steps
+        const steps = stepsContainer.querySelectorAll(".timeline-step");
+        steps.forEach(step => {
+          step.addEventListener("click", (e) => {
+            e.stopPropagation();
+            updateChangelog(step.dataset.version);
+          });
+        });
+      };
+
+      const updateChangelog = (version) => {
+        const data = activeChangelogData[version];
+        if (!data || !detailsPanel) return;
+
+        // Render details content
+        let detailsHtml = `
+          <div class="changelog-header" style="display: flex; align-items: center; justify-content: space-between; width: 100%; margin-bottom: 1.5rem; flex-wrap: wrap; gap: 12px;">
+            <div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
+              <h4 class="changelog-version" style="font-size: 1.25rem; font-weight: 700; color: var(--defualt); margin: 0;">${data.version}</h4>
+              <span class="changelog-badge latest" style="background-color: var(--accent-bg); color: var(--accent); border: 1px solid var(--accent); padding: 2px 8px; font-size: 0.7rem; font-weight: 600; border-radius: 12px; text-transform: uppercase; letter-spacing: 0.5px;">${data.badge}</span>
+              <span class="changelog-date" style="font-size: 0.85rem; color: var(--boot);">${data.date}</span>
+            </div>
+            <div style="display: flex; gap: 8px;">
+              <button class="settings-btn" id="editActiveVersionBtn" style="padding: 4px 10px; font-size: 0.75rem; display: flex; align-items: center; gap: 4px; background: transparent; border: 1px solid var(--settingsborder);">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"></path><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path></svg>
+                Edit
+              </button>
+              <button class="settings-btn danger" id="deleteActiveVersionBtn" style="padding: 4px 10px; font-size: 0.75rem; display: flex; align-items: center; gap: 4px; background: transparent; border: 1px solid var(--settingsborder);">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+                Delete
+              </button>
+            </div>
+          </div>
+        `;
+
+        if (data.details && data.details.length > 0) {
+          detailsHtml += `<ul class="changelog-list" style="list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 0.75rem;">`;
+          data.details.forEach(item => {
+            detailsHtml += `
+              <li style="display: flex; align-items: flex-start; gap: 8px; font-size: 0.9rem; line-height: 1.5; color: var(--defualt);">
+                <span class="changelog-tag ${item.type}">${item.type}</span>
+                <span><strong>${item.title}</strong>: ${item.description}</span>
+              </li>
+            `;
+          });
+          detailsHtml += `</ul>`;
+        } else {
+          detailsHtml += `
+            <div style="text-align: center; color: var(--boot); padding: 2rem 0; font-style: italic; font-size: 0.95rem;">
+              No detailed update notes available for this version. Click 'Edit' to add items.
+            </div>
+          `;
+        }
+
+        detailsPanel.innerHTML = detailsHtml;
+
+        // Bind Edit & Delete buttons
+        const editBtn = document.getElementById("editActiveVersionBtn");
+        if (editBtn) {
+          editBtn.addEventListener("click", () => enterEditMode(version));
+        }
+        const deleteBtn = document.getElementById("deleteActiveVersionBtn");
+        if (deleteBtn) {
+          deleteBtn.addEventListener("click", () => deleteVersion(version));
+        }
+
+        // Update active class on steps
+        if (wrapper) {
+          const steps = wrapper.querySelectorAll(".timeline-step");
+          steps.forEach(step => {
+            if (step.dataset.version === version) {
+              step.classList.add("active");
+              if (ball) {
+                ball.style.top = step.style.top;
+              }
+            } else {
+              step.classList.remove("active");
+            }
+          });
+        }
+      };
+
+      const enterEditMode = (version) => {
+        const data = activeChangelogData[version];
+        if (!data || !detailsPanel) return;
+
+        let editHtml = `
+          <div class="changelog-edit-form" style="display: flex; flex-direction: column; gap: 1rem;">
+            <div style="display: flex; gap: 12px; flex-wrap: wrap;">
+              <div style="flex: 1; min-width: 150px;">
+                <label style="display: block; font-size: 0.8rem; font-weight: 600; margin-bottom: 4px; color: var(--boot);">Version Name</label>
+                <input type="text" id="editVersionName" class="settings-input" value="${data.version}" style="width: 100%;" />
+              </div>
+              <div style="flex: 1; min-width: 120px;">
+                <label style="display: block; font-size: 0.8rem; font-weight: 600; margin-bottom: 4px; color: var(--boot);">Badge</label>
+                <input type="text" id="editVersionBadge" class="settings-input" value="${data.badge}" style="width: 100%;" />
+              </div>
+              <div style="flex: 1; min-width: 150px;">
+                <label style="display: block; font-size: 0.8rem; font-weight: 600; margin-bottom: 4px; color: var(--boot);">Release Date</label>
+                <input type="text" id="editVersionDate" class="settings-input" value="${data.date}" style="width: 100%;" />
+              </div>
+            </div>
+            
+            <div>
+              <label style="display: block; font-size: 0.8rem; font-weight: 600; margin-bottom: 8px; color: var(--boot);">Patch Items (Subheadings & Descriptions)</label>
+              <div id="editVersionItemsContainer" style="display: flex; flex-direction: column; gap: 12px; margin-bottom: 1rem;">
+                <!-- Loaded below -->
+              </div>
+              <button class="settings-btn" id="addEditItemBtn" style="padding: 6px 12px; font-size: 0.8rem; display: flex; align-items: center; gap: 4px; width: fit-content; background: transparent; border: 1px dashed var(--settingsborder);">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                Add patch item
+              </button>
+            </div>
+            
+            <div style="display: flex; gap: 12px; margin-top: 1rem; border-top: 1px solid var(--settingsborder); padding-top: 1rem;">
+              <button class="settings-btn" id="saveVersionBtn" style="padding: 8px 16px; font-size: 0.9rem;">Save changes</button>
+              <button class="settings-btn" id="cancelEditBtn" style="padding: 8px 16px; font-size: 0.9rem; background: transparent; border: 1px solid var(--settingsborder);">Cancel</button>
+            </div>
+          </div>
+        `;
+
+        detailsPanel.innerHTML = editHtml;
+
+        const itemsContainer = document.getElementById("editVersionItemsContainer");
+
+        const createItemRow = (item = { type: "reworked", title: "", description: "" }) => {
+          const row = document.createElement("div");
+          row.className = "edit-item-row";
+          row.style.cssText = "display: flex; gap: 10px; align-items: flex-start; border: 1px solid var(--settingsborder); padding: 10px; border-radius: 8px; background: rgba(0,0,0,0.02);";
+          row.innerHTML = `
+            <select class="settings-input edit-item-type" style="width: 110px; padding: 6px;">
+              <option value="reworked" ${item.type === 'reworked' ? 'selected' : ''}>Reworked</option>
+              <option value="added" ${item.type === 'added' ? 'selected' : ''}>Added</option>
+              <option value="improved" ${item.type === 'improved' ? 'selected' : ''}>Improved</option>
+              <option value="fixed" ${item.type === 'fixed' ? 'selected' : ''}>Fixed</option>
+            </select>
+            <div style="display: flex; flex-direction: column; gap: 8px; flex: 1;">
+              <input type="text" class="settings-input edit-item-title" placeholder="Subheading (e.g. Statistics in Qbank)" value="${item.title}" style="width: 100%; padding: 6px;" />
+              <textarea class="settings-input edit-item-desc" placeholder="Detailed description..." style="width: 100%; height: 50px; padding: 6px; font-family: inherit; font-size: 0.85rem; resize: vertical;">${item.description}</textarea>
+            </div>
+            <button class="settings-btn danger delete-item-row-btn" style="padding: 6px 10px; margin-top: 2px; background: transparent; border: 1px solid var(--settingsborder);">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+            </button>
+          `;
+
+          // Bind delete row listener
+          row.querySelector(".delete-item-row-btn").addEventListener("click", () => {
+            row.remove();
+          });
+
+          itemsContainer.appendChild(row);
+        };
+
+        // Populate existing items
+        if (data.details && data.details.length > 0) {
+          data.details.forEach(item => createItemRow(item));
+        }
+
+        // Add item button listener
+        document.getElementById("addEditItemBtn").addEventListener("click", () => createItemRow());
+
+        // Cancel button listener
+        document.getElementById("cancelEditBtn").addEventListener("click", () => {
+          if (version.startsWith("draft-")) {
+            delete activeChangelogData[version];
+            state.settings.changelogData = activeChangelogData;
+            Storage.saveSettings(state.settings).catch(err => console.error(err));
+            renderTimelineAxis();
+            const remainingKeys = Object.keys(activeChangelogData);
+            updateChangelog(remainingKeys[0] || "X.40");
+          } else {
+            updateChangelog(version);
+          }
+        });
+
+        // Save button listener
+        document.getElementById("saveVersionBtn").addEventListener("click", async () => {
+          const newName = document.getElementById("editVersionName").value.trim();
+          const newBadge = document.getElementById("editVersionBadge").value.trim();
+          const newDate = document.getElementById("editVersionDate").value.trim();
+
+          if (!newName) {
+            modalAlert("Version Name cannot be empty.");
+            return;
+          }
+
+          // Gather items
+          const items = [];
+          itemsContainer.querySelectorAll(".edit-item-row").forEach(row => {
+            const type = row.querySelector(".edit-item-type").value;
+            const title = row.querySelector(".edit-item-title").value.trim();
+            const description = row.querySelector(".edit-item-desc").value.trim();
+            if (title) {
+              items.push({ type, title, description });
+            }
+          });
+
+          // Update activeChangelogData
+          const newKey = newName.replace("Version ", "").trim();
+          
+          if (newKey !== version && activeChangelogData[newKey]) {
+            modalAlert("Version " + newKey + " already exists.");
+            return;
+          }
+
+          if (newKey !== version) {
+            delete activeChangelogData[version];
+          }
+
+          activeChangelogData[newKey] = {
+            version: newName.startsWith("Version ") ? newName : "Version " + newName,
+            badge: newBadge,
+            date: newDate,
+            details: items
+          };
+
+          // Save settings to backend
+          state.settings.changelogData = activeChangelogData;
+          try {
+            await Storage.saveSettings(state.settings);
+            console.log("[Settings] Changelog saved successfully to settings.json");
+          } catch (err) {
+            console.error("Failed to save settings:", err);
+          }
+
+          // Rerender timeline and select new version
+          renderTimelineAxis();
+          updateChangelog(newKey);
+        });
+      };
+
+      const deleteVersion = async (version) => {
+        if (Object.keys(activeChangelogData).length <= 1) {
+          modalAlert("You must keep at least one version in the changelog.");
+          return;
+        }
+
+        if (confirm(`Are you sure you want to delete Version ${version}?`)) {
+          delete activeChangelogData[version];
+
+          // Save settings to backend
+          state.settings.changelogData = activeChangelogData;
+          try {
+            await Storage.saveSettings(state.settings);
+            console.log("[Settings] Changelog version deleted and settings.json saved.");
+          } catch (err) {
+            console.error("Failed to save settings:", err);
+          }
+
+          // Rerender and select the first available version
+          renderTimelineAxis();
+          const remainingKeys = Object.keys(activeChangelogData);
+          updateChangelog(remainingKeys[0]);
+        }
+      };
+
+      // Dragging and interactive clicking logic
+      if (wrapper && ball) {
+        let isDragging = false;
+
+        const onStart = (e) => {
+          isDragging = true;
+          document.body.style.cursor = "grabbing";
+          document.addEventListener("mousemove", onMove);
+          document.addEventListener("mouseup", onEnd);
+          e.preventDefault();
+        };
+
+        const onMove = (e) => {
+          if (!isDragging) return;
+          const rect = wrapper.getBoundingClientRect();
+          let relativeY = e.clientY - rect.top;
+          relativeY = Math.max(0, Math.min(relativeY, rect.height));
+          const percentage = relativeY / rect.height;
+
+          const steps = wrapper.querySelectorAll(".timeline-step");
+          // Find closest step
+          let closestStep = null;
+          let minDiff = Infinity;
+          steps.forEach(step => {
+            const stepPct = parseFloat(step.style.top) / 100;
+            const diff = Math.abs(percentage - stepPct);
+            if (diff < minDiff) {
+              minDiff = diff;
+              closestStep = step;
+            }
+          });
+
+          if (closestStep) {
+            updateChangelog(closestStep.dataset.version);
+          }
+        };
+
+        const onEnd = () => {
+          isDragging = false;
+          document.body.style.cursor = "";
+          document.removeEventListener("mousemove", onMove);
+          document.removeEventListener("mouseup", onEnd);
+        };
+
+        ball.addEventListener("mousedown", onStart);
+
+        // Click wrapper track directly
+        wrapper.addEventListener("click", (e) => {
+          if (e.target.closest("#timelineBall")) return;
+          const rect = wrapper.getBoundingClientRect();
+          const percentage = (e.clientY - rect.top) / rect.height;
+
+          const steps = wrapper.querySelectorAll(".timeline-step");
+          let closestStep = null;
+          let minDiff = Infinity;
+          steps.forEach(step => {
+            const stepPct = parseFloat(step.style.top) / 100;
+            const diff = Math.abs(percentage - stepPct);
+            if (diff < minDiff) {
+              minDiff = diff;
+              closestStep = step;
+            }
+          });
+
+          if (closestStep) {
+            updateChangelog(closestStep.dataset.version);
+          }
+        });
+      }
+
+      // Add version button listener
+      const addVersionBtn = document.getElementById("addNewVersionBtn");
+      if (addVersionBtn) {
+        addVersionBtn.addEventListener("click", () => {
+          const draftKey = "draft-" + Date.now();
+
+          // Create new blank version entry at the start of the object
+          const newEntry = {
+            version: "Version New",
+            badge: "NEW UPDATE",
+            date: "Upcoming Release",
+            details: []
+          };
+
+          // Insert at the beginning of activeChangelogData
+          const updatedData = {
+            [draftKey]: newEntry,
+            ...activeChangelogData
+          };
+
+          activeChangelogData = updatedData;
+
+          // Save settings to backend
+          state.settings.changelogData = activeChangelogData;
+          Storage.saveSettings(state.settings).catch(err => {
+            console.error("Failed to save settings:", err);
+          });
+
+          // Rerender timeline axis and select/edit the new version
+          renderTimelineAxis();
+          updateChangelog(draftKey);
+          enterEditMode(draftKey);
+        });
+      }
+
+      // Initial render and default selection
+      renderTimelineAxis();
+      const defaultVersion = Object.keys(activeChangelogData)[0] || "X.40";
+      updateChangelog(defaultVersion);
+    };
+
+    // Run initialization
+    initChangelogSlider();
 
     // Prevent context menu in settings
     const settingsView = document.getElementById("settingsView");
@@ -5489,7 +5941,7 @@ window.startImportProcess = function () {
         if (overlay) {
           const contentDiv = overlay.querySelector("p"); // createModernModal puts content in p
           if (contentDiv) {
-            contentDiv.innerHTML = `<textarea style="width:100%; height:300px; background:var(--bg-primary); color:var(--text); border:1px solid var(--border); padding:8px; font-family:monospace; font-size:12px; resize:vertical;" readonly>${logContent}</textarea>`;
+            contentDiv.innerHTML = `<textarea style="width:100%; height:300px; background:var(--bg-primary); color:var(--default); border:1px solid var(--border); padding:8px; font-family:monospace; font-size:12px; resize:vertical;" readonly>${logContent}</textarea>`;
           }
           // Make modal wider
           const dialog = overlay.querySelector("div:nth-child(1)");

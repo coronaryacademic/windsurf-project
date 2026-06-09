@@ -2814,7 +2814,7 @@ body.fullscreen .sidebar-resizer {
 
 .settings-btn:hover {
   background: var(--panel-hover) !important;
-  color: var(--text);
+  color: var(--defualt);
 }
 
 /* Specific Header Buttons Hover Effect */
