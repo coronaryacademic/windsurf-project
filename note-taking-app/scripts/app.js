@@ -5941,7 +5941,7 @@ window.startImportProcess = function () {
         if (overlay) {
           const contentDiv = overlay.querySelector("p"); // createModernModal puts content in p
           if (contentDiv) {
-            contentDiv.innerHTML = `<textarea style="width:100%; height:300px; background:var(--bg-primary); color:var(--default); border:1px solid var(--border); padding:8px; font-family:monospace; font-size:12px; resize:vertical;" readonly>${logContent}</textarea>`;
+            contentDiv.innerHTML = `<textarea style="width:100%; height:300px; background:var(--panel-2); color:var(--default); border:1px solid var(--border); padding:8px; font-family:monospace; font-size:12px; resize:vertical;" readonly>${logContent}</textarea>`;
           }
           // Make modal wider
           const dialog = overlay.querySelector("div:nth-child(1)");
