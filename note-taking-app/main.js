@@ -1371,10 +1371,14 @@ ipcMain.handle('html:set-category', async (event, id, category) => {
     }
 });
 
-// IPC Handlers for additional features
 ipcMain.handle('app:getStartupLogs', () => {
   return startupLogs;
 });
+
+ipcMain.on('app:log', (event, ...args) => {
+  console.log('[RENDERER LOG]', ...args);
+});
+
 app.whenReady().then(async () => {
   console.log("\n");
 

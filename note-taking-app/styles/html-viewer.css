@@ -263,6 +263,17 @@
   color: #fff;
 }
 
+.html-chip.dragging {
+  opacity: 0.45;
+  border-style: dashed;
+}
+
+.html-chip.drag-over {
+  border-color: var(--accent);
+  background: rgba(56, 81, 163, 0.15) !important;
+  transform: scale(1.05);
+}
+
 /* ── Hub Content (Grid Area) ── */
 .html-hub-content {
   flex: 1;
@@ -284,7 +295,7 @@
   background: var(--panel, #1a1a1a);
   border: 1px solid var(--border);
   border-radius: 14px;
-  overflow: hidden;
+  overflow: visible;
   cursor: pointer;
   transition: all 0.22s cubic-bezier(0.4, 0, 0.2, 1);
   display: flex;
@@ -302,12 +313,13 @@
   transform: translateY(-1px);
 }
 
-/* Card top gradient strip */
+/* Card top gradient strip — needs its own clipping since parent overflow is visible */
 .html-card-strip {
   height: 5px;
   background: linear-gradient(90deg, var(--accent), var(--accent-2, #6366f1));
   border-radius: 14px 14px 0 0;
   flex-shrink: 0;
+  overflow: hidden;
 }
 
 /* Card Body */
@@ -401,17 +413,15 @@
   color: var(--defualt);
 }
 
-/* Card Dropdown Menu */
+/* Card Dropdown Menu — uses position:fixed set by JS to avoid clipping */
 .html-card-dropdown {
-  position: absolute;
-  top: 42px;
-  right: 10px;
+  position: fixed;
   background: var(--panel, #1e1e1e);
   border: 1px solid var(--border);
   border-radius: 10px;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
-  min-width: 160px;
-  z-index: 200;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.55);
+  min-width: 170px;
+  z-index: 9999;
   overflow: hidden;
   animation: htmlDropIn 0.15s ease;
 }
@@ -460,7 +470,7 @@
 
 /* ── Empty State ── */
 .html-empty-state {
-  display: flex;
+  display: none;
   flex-direction: column;
   align-items: center;
   justify-content: center;
@@ -470,11 +480,10 @@
   color: var(--defualt, #888);
   position: absolute;
   inset: 0;
-  pointer-events: none;
 }
 
 .html-empty-state.visible {
-  pointer-events: all;
+  display: flex;
 }
 
 .html-empty-state svg {

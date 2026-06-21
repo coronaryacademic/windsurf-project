@@ -58,6 +58,7 @@ try {
     htmlDeleteFile: (id) => ipcRenderer.invoke('html:delete-file', id),
     htmlRenameFile: (id, newTitle) => ipcRenderer.invoke('html:rename-file', id, newTitle),
     htmlSetCategory: (id, category) => ipcRenderer.invoke('html:set-category', id, category),
+    log: (msg) => ipcRenderer.send('app:log', msg),
 
     // Startup Logs
     getStartupLogs: () => ipcRenderer.invoke('app:getStartupLogs'),
