@@ -4252,9 +4252,28 @@ window.startImportProcess = function () {
   el.newNoteBtn.addEventListener("click", newNote);
   
   if (el.sidebarOpenPdfBtn) {
-    el.sidebarOpenPdfBtn.addEventListener("click", () => {
+    el.sidebarOpenPdfBtn.addEventListener('click', () => {
       if (window.PDFViewer) {
         window.PDFViewer.open();
+      }
+    });
+  }
+
+  // HTML Viewer topbar button
+  const openHtmlViewerBtn = document.getElementById('openHtmlViewerBtn');
+  if (openHtmlViewerBtn) {
+    openHtmlViewerBtn.addEventListener('click', () => {
+      if (window.HTMLViewer) window.HTMLViewer.open();
+    });
+  }
+
+  // HTML import from sidebar action menu
+  const sidebarImportHtmlBtn = document.getElementById('sidebarImportHtmlBtn');
+  if (sidebarImportHtmlBtn) {
+    sidebarImportHtmlBtn.addEventListener('click', () => {
+      if (window.HTMLViewer) {
+        window.HTMLViewer.open();
+        setTimeout(() => window.HTMLViewer.importMaterial(), 300);
       }
     });
   }
@@ -9288,5 +9307,11 @@ window.startImportProcess = function () {
       const display = document.getElementById("data-dir-display");
       if (display) display.textContent = path;
     });
+  }
+
+  // Initialize HTML Viewer workspace
+  if (window.HTMLViewer) {
+    window.HTMLViewer.init();
+    console.log('[APP] HTMLViewer initialized.');
   }
 })();

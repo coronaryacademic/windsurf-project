@@ -1212,6 +1212,165 @@ ipcMain.handle('pdf:save-recent', async (event, recentList) => {
     return await writeFile(recentPath, recentList);
 });
 
+// HTML Study Materials IPC Handlers
+const htmlMaterialsDir = path.join(dataDir, 'html_materials');
+const htmlMetadataPath = path.join(htmlMaterialsDir, 'html_materials.json');
+
+// Ensure html_materials directory exists
+async function ensureHtmlDir() {
+  await fs.mkdir(htmlMaterialsDir, { recursive: true });
+}
+
+ipcMain.handle('html:open-dialog', async () => {
+    const result = await dialog.showOpenDialog(mainWindow, {
+        properties: ['openFile'],
+        filters: [{ name: 'HTML Files', extensions: ['html', 'htm'] }]
+    });
+    if (result.canceled) return null;
+    return result.filePaths[0];
+});
+
+ipcMain.handle('html:import-file', async (event, filePath) => {
+    try {
+        await ensureHtmlDir();
+        const content = await fs.readFile(filePath, 'utf8');
+        
+        // Extract title from HTML content or use file name
+        let title = '';
+        const titleMatch = content.match(/<title>([^<]+)<\/title>/i);
+        if (titleMatch && titleMatch[1]) {
+            title = titleMatch[1].trim();
+        } else {
+            title = path.basename(filePath, path.extname(filePath));
+        }
+
+        const id = 'html_' + Date.now();
+        const destPath = path.join(htmlMaterialsDir, `${id}.html`);
+        await fs.writeFile(destPath, content, 'utf8');
+
+        // Update metadata
+        let metadata = [];
+        try {
+            const metaContent = await fs.readFile(htmlMetadataPath, 'utf8');
+            metadata = JSON.parse(metaContent);
+        } catch (e) {
+            // File doesn't exist yet or is empty
+        }
+
+        const newEntry = {
+            id,
+            title,
+            originalName: path.basename(filePath),
+            category: 'Uncategorized',
+            importedAt: new Date().toISOString()
+        };
+
+        metadata.push(newEntry);
+        await fs.writeFile(htmlMetadataPath, JSON.stringify(metadata, null, 2), 'utf8');
+
+        return { success: true, list: metadata, newItem: newEntry };
+    } catch (err) {
+        console.error("Error importing HTML file:", err);
+        return { success: false, error: err.message };
+    }
+});
+
+ipcMain.handle('html:get-list', async () => {
+    try {
+        await ensureHtmlDir();
+        try {
+            const metaContent = await fs.readFile(htmlMetadataPath, 'utf8');
+            return JSON.parse(metaContent);
+        } catch (e) {
+            return [];
+        }
+    } catch (err) {
+        console.error("Error getting HTML list:", err);
+        return [];
+    }
+});
+
+ipcMain.handle('html:get-file', async (event, id) => {
+    try {
+        const filePath = path.join(htmlMaterialsDir, `${id}.html`);
+        return await fs.readFile(filePath, 'utf8');
+    } catch (err) {
+        console.error("Error reading HTML file:", err);
+        throw err;
+    }
+});
+
+ipcMain.handle('html:delete-file', async (event, id) => {
+    try {
+        const filePath = path.join(htmlMaterialsDir, `${id}.html`);
+        try {
+            await fs.unlink(filePath);
+        } catch (e) {
+            console.warn(`File ${filePath} could not be deleted or does not exist:`, e);
+        }
+
+        let metadata = [];
+        try {
+            const metaContent = await fs.readFile(htmlMetadataPath, 'utf8');
+            metadata = JSON.parse(metaContent);
+        } catch (e) { }
+
+        metadata = metadata.filter(item => item.id !== id);
+        await fs.writeFile(htmlMetadataPath, JSON.stringify(metadata, null, 2), 'utf8');
+
+        return { success: true, list: metadata };
+    } catch (err) {
+        console.error("Error deleting HTML file:", err);
+        return { success: false, error: err.message };
+    }
+});
+
+ipcMain.handle('html:rename-file', async (event, id, newTitle) => {
+    try {
+        let metadata = [];
+        try {
+            const metaContent = await fs.readFile(htmlMetadataPath, 'utf8');
+            metadata = JSON.parse(metaContent);
+        } catch (e) { }
+
+        metadata = metadata.map(item => {
+            if (item.id === id) {
+                return { ...item, title: newTitle };
+            }
+            return item;
+        });
+
+        await fs.writeFile(htmlMetadataPath, JSON.stringify(metadata, null, 2), 'utf8');
+        return { success: true, list: metadata };
+    } catch (err) {
+        console.error("Error renaming HTML file:", err);
+        return { success: false, error: err.message };
+    }
+});
+
+ipcMain.handle('html:set-category', async (event, id, category) => {
+    try {
+        let metadata = [];
+        try {
+            const metaContent = await fs.readFile(htmlMetadataPath, 'utf8');
+            metadata = JSON.parse(metaContent);
+        } catch (e) { }
+
+        metadata = metadata.map(item => {
+            if (item.id === id) {
+                return { ...item, category: category || 'Uncategorized' };
+            }
+            return item;
+        });
+
+        await fs.writeFile(htmlMetadataPath, JSON.stringify(metadata, null, 2), 'utf8');
+        return { success: true, list: metadata };
+    } catch (err) {
+        console.error("Error setting category on HTML file:", err);
+        return { success: false, error: err.message };
+    }
+});
+
 // IPC Handlers for additional features
 ipcMain.handle('app:getStartupLogs', () => {
   return startupLogs;

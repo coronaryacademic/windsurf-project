@@ -49,6 +49,15 @@ try {
     pdfSaveAnnotations: (filePath, data) => ipcRenderer.invoke('pdf:save-annotations', filePath, data),
     pdfGetRecent: () => ipcRenderer.invoke('pdf:get-recent'),
     pdfSaveRecent: (data) => ipcRenderer.invoke('pdf:save-recent', data),
+    
+    // HTML Study Materials
+    htmlOpenDialog: () => ipcRenderer.invoke('html:open-dialog'),
+    htmlImportFile: (filePath) => ipcRenderer.invoke('html:import-file', filePath),
+    htmlGetList: () => ipcRenderer.invoke('html:get-list'),
+    htmlGetFile: (id) => ipcRenderer.invoke('html:get-file', id),
+    htmlDeleteFile: (id) => ipcRenderer.invoke('html:delete-file', id),
+    htmlRenameFile: (id, newTitle) => ipcRenderer.invoke('html:rename-file', id, newTitle),
+    htmlSetCategory: (id, category) => ipcRenderer.invoke('html:set-category', id, category),
 
     // Startup Logs
     getStartupLogs: () => ipcRenderer.invoke('app:getStartupLogs'),
