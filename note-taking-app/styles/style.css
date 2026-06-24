@@ -2107,7 +2107,7 @@ body.fullscreen .sidebar-resizer {
   width: max-content;
   top: 100%;
   margin-top: 4px;
-  background: var(--panel);
+  background: var(--bg-secondary);
   border: 1px solid var(--border);
   border-radius: 10px;
   box-shadow: var(--shadow);
@@ -2141,7 +2141,7 @@ body.fullscreen .sidebar-resizer {
   background: none;
   border: none;
   border-radius: 6px;
-  color: var(--text);
+  color: var(--defualt);
   cursor: pointer;
   transition: all 0.2s;
   display: flex;
@@ -2192,7 +2192,7 @@ body.fullscreen .sidebar-resizer {
   border: 1px solid var(--border);
   border-radius: 6px;
   padding: 4px 6px;
-  color: var(--text);
+  color: var(--defualt);
   cursor: pointer;
   display: inline-flex;
   align-items: center;
@@ -2216,7 +2216,7 @@ body.fullscreen .sidebar-resizer {
   border: 1px solid var(--border);
   border-radius: 6px;
   padding: 4px 8px;
-  color: var(--text);
+  color: var(--defualt);
   font-size: 13px;
   cursor: pointer;
   outline: none;
